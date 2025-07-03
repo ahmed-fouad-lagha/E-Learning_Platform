@@ -24,6 +24,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if Supabase is properly configured
+    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
+
+    if (!isConfigured) {
+      console.warn('Supabase not configured. Please set up your environment variables.');
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -74,6 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
+    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
+
+    if (!isConfigured) {
+      throw new Error('يرجى إعداد Supabase أولاً. اضغط على "Connect to Supabase" في الأعلى.');
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -105,6 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
+
+    if (!isConfigured) {
+      throw new Error('يرجى إعداد Supabase أولاً. اضغط على "Connect to Supabase" في الأعلى.');
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,

@@ -1,12 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/auth/login-form';
 import { RegisterForm } from '@/components/auth/register-form';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                              process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
@@ -25,6 +47,18 @@ export default function AuthPage() {
             استعد لامتحان البكالوريا مع أفضل منصة تعليمية في الجزائر
           </p>
         </div>
+
+        {/* Supabase Configuration Warning */}
+        {!isSupabaseConfigured && (
+          <div className="mb-6">
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>إعداد مطلوب:</strong> يرجى الضغط على "Connect to Supabase" في الأعلى لإعداد قاعدة البيانات قبل استخدام ميزات التسجيل وتسجيل الدخول.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         {/* Auth Forms */}
         <div className="flex justify-center">
