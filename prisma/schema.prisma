@@ -1,0 +1,298 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  phone           String?   @unique
+  password        String
+  name            String
+  avatar          String?
+  role            String    @default("STUDENT") // "STUDENT", "TEACHER", "PARENT", "ADMIN"
+  isVerified      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  lastLogin       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Student specific fields
+  grade           String?   // "PREMIERE_AS", "PREMIERE_AL", etc.
+  wilaya          String?   // "ALGIERS", "ORAN", etc.
+  school          String?
+  parentPhone     String?
+  dateOfBirth     DateTime?
+  
+  // Teacher specific fields
+  subjects        String?   // JSON string or comma-separated values
+  experience      Int?      // years of experience
+  qualification   String?
+  
+  // Learning progress
+  enrollments     Enrollment[]
+  examResults     ExamResult[]
+  studySessions   StudySession[]
+  achievements    Achievement[]
+  
+  // Social features
+  studyGroups     StudyGroupMember[]
+  forumPosts      ForumPost[]
+  forumComments   ForumComment[]
+  
+  // Notifications
+  notifications   Notification[]
+  
+  // Parent-Student relationship
+  children        User[]    @relation("ParentChild")
+  parents         User[]    @relation("ParentChild")
+
+  @@map("users")
+}
+
+model Course {
+  id              String    @id @default(cuid())
+  title           String
+  titleAr         String
+  description     String
+  descriptionAr   String
+  subject         String    // "MATHEMATICS", "PHYSICS", etc.
+  grade           String    // "PREMIERE_AS", "TERMINALE_AS", etc.
+  difficulty      String    // "beginner", "intermediate", "advanced"
+  duration        Int       // in minutes
+  thumbnail       String?
+  isPublished     Boolean   @default(false)
+  price           Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Course content
+  lessons         Lesson[]
+  enrollments     Enrollment[]
+  
+  // Teacher who created the course
+  teacherId       String?
+  teacher         User?     @relation(fields: [teacherId], references: [id])
+
+  @@map("courses")
+}
+
+model Lesson {
+  id              String    @id @default(cuid())
+  title           String
+  titleAr         String
+  content         String    // JSON content
+  contentAr       String    // JSON content in Arabic
+  videoUrl        String?
+  audioUrl        String?
+  duration        Int       // in minutes
+  order           Int
+  isPublished     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  courseId        String
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Progress tracking
+  studySessions   StudySession[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id              String    @id @default(cuid())
+  progress        Float     @default(0) // percentage
+  completedAt     DateTime?
+  enrolledAt      DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  courseId        String
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model StudySession {
+  id              String    @id @default(cuid())
+  duration        Int       // in minutes
+  completedAt     DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lessonId        String
+  lesson          Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("study_sessions")
+}
+
+model Exam {
+  id              String    @id @default(cuid())
+  title           String
+  titleAr         String
+  description     String?
+  descriptionAr   String?
+  subject         String    // "MATHEMATICS", "PHYSICS", etc.
+  grade           String    // "PREMIERE_AS", "TERMINALE_AS", etc.
+  year            Int       // exam year
+  duration        Int       // in minutes
+  totalMarks      Int
+  passingMarks    Int
+  isPublished     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  questions       Question[]
+  results         ExamResult[]
+
+  @@map("exams")
+}
+
+model Question {
+  id              String    @id @default(cuid())
+  question        String
+  questionAr      String
+  type            String    // "multiple_choice", "true_false", "essay"
+  options         String?   // JSON array for multiple choice
+  optionsAr       String?   // JSON array in Arabic
+  correctAnswer   String
+  explanation     String?
+  explanationAr   String?
+  marks           Int       @default(1)
+  order           Int
+  
+  examId          String
+  exam            Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model ExamResult {
+  id              String    @id @default(cuid())
+  score           Int
+  totalMarks      Int
+  percentage      Float
+  timeSpent       Int       // in minutes
+  answers         String    // JSON object with answers
+  completedAt     DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  examId          String
+  exam            Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@map("exam_results")
+}
+
+model StudyGroup {
+  id              String    @id @default(cuid())
+  name            String
+  nameAr          String
+  description     String?
+  descriptionAr   String?
+  subject         String?   // "MATHEMATICS", "PHYSICS", etc.
+  grade           String?   // "PREMIERE_AS", "TERMINALE_AS", etc.
+  maxMembers      Int       @default(20)
+  isPrivate       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  members         StudyGroupMember[]
+
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id              String    @id @default(cuid())
+  role            String    @default("member") // "admin", "moderator", "member"
+  joinedAt        DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  groupId         String
+  group           StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("study_group_members")
+}
+
+model ForumPost {
+  id              String    @id @default(cuid())
+  title           String
+  content         String
+  subject         String?   // "MATHEMATICS", "PHYSICS", etc.
+  grade           String?   // "PREMIERE_AS", "TERMINALE_AS", etc.
+  isSticky        Boolean   @default(false)
+  isLocked        Boolean   @default(false)
+  views           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  comments        ForumComment[]
+
+  @@map("forum_posts")
+}
+
+model ForumComment {
+  id              String    @id @default(cuid())
+  content         String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  postId          String
+  post            ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("forum_comments")
+}
+
+model Achievement {
+  id              String    @id @default(cuid())
+  title           String
+  titleAr         String
+  description     String
+  descriptionAr   String
+  icon            String
+  type            String    // "course_completion", "exam_score", "study_streak", etc.
+  requirement     String    // JSON object with requirements
+  earnedAt        DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("achievements")
+}
+
+model Notification {
+  id              String    @id @default(cuid())
+  title           String
+  titleAr         String
+  message         String
+  messageAr       String
+  type            String    // "info", "success", "warning", "error"
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
