@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, Profile } from './supabase';
+import { supabase, Profile, isConfigured } from './supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -24,10 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if Supabase is properly configured
-    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
-
     if (!isConfigured) {
       console.warn('Supabase not configured. Please set up your environment variables.');
       setLoading(false);
@@ -84,9 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
-    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
-
     if (!isConfigured) {
       throw new Error('يرجى إعداد Supabase أولاً. اضغط على "Connect to Supabase" في الأعلى.');
     }
@@ -122,9 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
-
     if (!isConfigured) {
       throw new Error('يرجى إعداد Supabase أولاً. اضغط على "Connect to Supabase" في الأعلى.');
     }

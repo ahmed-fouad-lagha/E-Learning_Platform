@@ -7,6 +7,7 @@ import { RegisterForm } from '@/components/auth/register-form';
 import { GraduationCap, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isConfigured } from '@/lib/supabase';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,9 +19,6 @@ export default function AuthPage() {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
-
-  const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                              process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-url';
 
   if (loading) {
     return (
@@ -49,7 +47,7 @@ export default function AuthPage() {
         </div>
 
         {/* Supabase Configuration Warning */}
-        {!isSupabaseConfigured && (
+        {!isConfigured && (
           <div className="mb-6">
             <Alert className="border-amber-200 bg-amber-50">
               <AlertCircle className="h-4 w-4 text-amber-600" />
