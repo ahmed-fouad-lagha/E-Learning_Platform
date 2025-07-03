@@ -412,6 +412,11 @@ export default function Home() {
     currentContent.testimonials.student3
   ];
 
+  // CSS classes for testimonial carousel
+  const getCarouselClasses = () => {
+    return `flex transition-transform duration-500 ease-in-out translate-x-[${language === 'ar' ? currentTestimonial * 100 : -currentTestimonial * 100}%]`;
+  };
+
   return (
     <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'}`}>
       {/* Enhanced Navigation */}
@@ -663,12 +668,14 @@ export default function Home() {
                         <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">
                           {subject.name}
                         </CardTitle>
-                        <CardDescription className="flex items-center space-x-2 rtl:space-x-reverse">
-                          <span>{subject.lessons} {language === 'ar' ? 'درس' : 'leçons'}</span>
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                          <CardDescription className="flex-1">
+                            <span>{subject.lessons} {language === 'ar' ? 'درس' : 'leçons'}</span>
+                          </CardDescription>
                           <Badge variant="outline" className="text-xs">
                             {subject.difficulty}
                           </Badge>
-                        </CardDescription>
+                        </div>
                       </div>
                     </div>
                     <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-600 transition-colors group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
@@ -710,8 +717,7 @@ export default function Home() {
           <div className="relative">
             <div className="overflow-hidden">
               <div 
-                className="flex transition-transform duration-500 ease-in-out"
-                style={{ transform: `translateX(${language === 'ar' ? currentTestimonial * 100 : -currentTestimonial * 100}%)` }}
+                className={getCarouselClasses()}
               >
                 {testimonials.map((testimonial, index) => (
                   <div key={index} className="w-full flex-shrink-0 px-4">
@@ -724,7 +730,7 @@ export default function Home() {
                           ))}
                         </div>
                         <blockquote className="text-xl md:text-2xl text-gray-700 italic leading-relaxed mb-6">
-                          "{testimonial.testimonial}"
+                          &ldquo;{testimonial.testimonial}&rdquo;
                         </blockquote>
                       </CardHeader>
                       <CardContent className="text-center">
@@ -757,6 +763,7 @@ export default function Home() {
                 <button
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
+                  aria-label={`${language === 'ar' ? 'عرض شهادة' : 'Voir témoignage'} ${index + 1}`}
                   className={`w-3 h-3 rounded-full transition-all ${
                     index === currentTestimonial ? 'bg-emerald-600 w-8' : 'bg-gray-300'
                   }`}

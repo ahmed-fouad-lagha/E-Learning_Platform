@@ -84,6 +84,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role: 'STUDENT',
+      agreeToTerms: false,
     },
   });
 
@@ -325,7 +326,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Checkbox
               id="agreeToTerms"
-              {...register('agreeToTerms')}
+              onCheckedChange={(checked) => setValue('agreeToTerms', checked === true)}
             />
             <Label htmlFor="agreeToTerms" className="text-sm">
               أوافق على{' '}
