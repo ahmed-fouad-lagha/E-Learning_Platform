@@ -221,7 +221,12 @@ export default function DashboardPage() {
                       <span className="font-medium">{course.name}</span>
                       <span className="text-sm text-gray-500">{course.progress}%</span>
                     </div>
-                    <Progress value={course.progress} className="h-2" />
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-500 transition-all" 
+                        style={{ width: `${course.progress}%` }}
+                      />
+                    </div>
                   </div>
                 ))}
               </CardContent>

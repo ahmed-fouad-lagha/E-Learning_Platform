@@ -4,10 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const isSupabaseConfigured = supabaseUrl && 
-                            supabaseUrl !== 'your-supabase-url' && 
-                            supabaseAnonKey && 
-                            supabaseAnonKey !== 'your-supabase-anon-key';
+const isSupabaseConfigured = Boolean(
+  supabaseUrl && 
+  supabaseUrl !== 'your-supabase-url' && 
+  supabaseAnonKey && 
+  supabaseAnonKey !== 'your-supabase-anon-key'
+);
 
 // Use dummy but valid URLs when Supabase is not configured to prevent initialization errors
 const defaultUrl = 'https://dummy.supabase.co';

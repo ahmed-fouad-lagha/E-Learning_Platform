@@ -1,3 +1,4 @@
+// CSS imported at component level for Next.js App Router
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
   creator: 'EduDZ Platform',
   publisher: 'EduDZ',
   robots: 'index, follow',
+  metadataBase: new URL('https://edudz.com'),
   openGraph: {
     type: 'website',
     locale: 'ar_DZ',
@@ -47,18 +49,20 @@ export const metadata: Metadata = {
     description: 'استعد لامتحان البكالوريا مع أفضل منصة تعليمية مصممة خصيصاً للطلاب الجزائريين',
     images: ['/twitter-image.jpg'],
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: '#10b981',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
+};
+
+// Separate viewport export for the whole app as per Next.js 15 guidelines
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#10b981'
 };
 
 export default function RootLayout({
