@@ -3,22 +3,31 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Loader2, Mail, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { loginSchema, type LoginInput } from '@/lib/validations';
+import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email('البريد الإلكتروني غير صحيح'),
+  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+});
+
+type LoginInput = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
-  onSuccess?: (user: any) => void;
+  onSuccess?: () => void;
   onSwitchToRegister?: () => void;
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
   const { toast } = useToast();
 
   const {
@@ -33,36 +42,23 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'حدث خطأ في تسجيل الدخول');
-      }
-
+      await signIn(data.email, data.password);
+      
       toast({
         title: 'نجح تسجيل الدخول',
-        description: result.message,
+        description: 'مرحباً بك في منصة التعلم الجزائرية',
       });
 
       if (onSuccess) {
-        onSuccess(result.user);
+        onSuccess();
       }
 
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطأ في تسجيل الدخول',
-        description: error instanceof Error ? error.message : 'حدث خطأ غير متوقع',
+        description: error.message === 'Invalid login credentials' 
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+          : 'حدث خطأ غير متوقع',
         variant: 'destructive',
       });
     } finally {
@@ -83,21 +79,21 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="emailOrPhone">البريد الإلكتروني أو رقم الهاتف</Label>
+            <Label htmlFor="email">البريد الإلكتروني</Label>
             <div className="relative">
               <Input
-                id="emailOrPhone"
-                type="text"
-                placeholder="example@email.com أو 0555123456"
+                id="email"
+                type="email"
+                placeholder="example@email.com"
                 className="pl-10 rtl:pr-10 rtl:pl-3"
-                {...register('emailOrPhone')}
+                {...register('email')}
               />
               <div className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 transform -translate-y-1/2">
                 <Mail className="h-4 w-4 text-gray-400" />
               </div>
             </div>
-            {errors.emailOrPhone && (
-              <p className="text-sm text-red-600">{errors.emailOrPhone.message}</p>
+            {errors.email && (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
             )}
           </div>
 

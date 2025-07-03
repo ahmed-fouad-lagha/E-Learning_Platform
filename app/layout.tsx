@@ -1,6 +1,8 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth-context';
+import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -78,9 +80,12 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <div id="root">{children}</div>
-        <div id="modal-root"></div>
-        <div id="toast-root"></div>
+        <AuthProvider>
+          <div id="root">{children}</div>
+          <div id="modal-root"></div>
+          <div id="toast-root"></div>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

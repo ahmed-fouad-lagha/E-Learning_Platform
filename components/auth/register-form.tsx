@@ -3,18 +3,41 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Loader2, User, Mail, Phone, GraduationCap, MapPin, School } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Mail, Phone, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { registerSchema, type RegisterInput } from '@/lib/validations';
+import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
+  email: z.string().email('البريد الإلكتروني غير صحيح'),
+  phone: z.string().optional(),
+  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+  confirmPassword: z.string(),
+  role: z.enum(['STUDENT', 'TEACHER', 'PARENT']).default('STUDENT'),
+  grade: z.string().optional(),
+  wilaya: z.string().optional(),
+  school: z.string().optional(),
+  parentPhone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: 'يجب الموافقة على الشروط والأحكام',
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'كلمات المرور غير متطابقة',
+  path: ['confirmPassword'],
+});
+
+type RegisterInput = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
-  onSuccess?: (user: any) => void;
+  onSuccess?: () => void;
   onSwitchToLogin?: () => void;
 }
 
@@ -42,13 +65,13 @@ const wilayas = [
   { value: 'TIZI_OUZOU', label: 'تيزي وزو' },
   { value: 'BEJAIA', label: 'بجاية' },
   { value: 'TLEMCEN', label: 'تلمسان' },
-  // Add more wilayas as needed
 ];
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
   const { toast } = useToast();
 
   const {
@@ -70,36 +93,23 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'حدث خطأ في إنشاء الحساب');
-      }
-
+      await signUp(data.email, data.password, data);
+      
       toast({
         title: 'تم إنشاء الحساب بنجاح',
-        description: result.message,
+        description: 'مرحباً بك في منصة التعلم الجزائرية',
       });
 
       if (onSuccess) {
-        onSuccess(result.user);
+        onSuccess();
       }
 
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطأ في إنشاء الحساب',
-        description: error instanceof Error ? error.message : 'حدث خطأ غير متوقع',
+        description: error.message === 'User already registered'
+          ? 'المستخدم موجود بالفعل'
+          : 'حدث خطأ غير متوقع',
         variant: 'destructive',
       });
     } finally {
@@ -176,7 +186,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
             <div className="space-y-2">
               <Label htmlFor="role">نوع الحساب</Label>
-              <Select onValueChange={(value) => setValue('role', value)}>
+              <Select onValueChange={(value) => setValue('role', value as any)}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر نوع الحساب" />
                 </SelectTrigger>

@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Users, Trophy, Globe, Smartphone, Wifi, GraduationCap, Star, Play, CheckCircle, BarChart3, Heart, Brain, Target, Clock, Award, TrendingUp, MessageCircle, Download, Shield, Zap, Calendar, MapPin, Phone, Mail, ChevronDown, Menu, X, Search, Filter, Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Home() {
   const [language, setLanguage] = useState('ar');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -27,6 +31,14 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleAuthClick = () => {
+    if (user) {
+      router.push('/dashboard');
+    } else {
+      router.push('/auth');
+    }
+  };
+
   const content = {
     ar: {
       nav: {
@@ -36,7 +48,7 @@ export default function Home() {
         pricing: 'الأسعار',
         about: 'عن المنصة',
         contact: 'اتصل بنا',
-        login: 'تسجيل الدخول',
+        login: user ? 'لوحة التحكم' : 'تسجيل الدخول',
         signup: 'إنشاء حساب'
       },
       hero: {
@@ -211,7 +223,7 @@ export default function Home() {
         pricing: 'Tarifs',
         about: 'À propos',
         contact: 'Contact',
-        login: 'Connexion',
+        login: user ? 'Tableau de bord' : 'Connexion',
         signup: 'Inscription'
       },
       hero: {
@@ -453,12 +465,14 @@ export default function Home() {
                 </button>
               </div>
               <div className="hidden md:flex items-center space-x-3 rtl:space-x-reverse">
-                <Button variant="ghost" size="sm" className="hover:bg-emerald-50">
+                <Button variant="ghost" size="sm" className="hover:bg-emerald-50" onClick={handleAuthClick}>
                   {currentContent.nav.login}
                 </Button>
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all">
-                  {currentContent.nav.signup}
-                </Button>
+                {!user && (
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all" onClick={handleAuthClick}>
+                    {currentContent.nav.signup}
+                  </Button>
+                )}
               </div>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -484,12 +498,14 @@ export default function Home() {
                 {currentContent.nav.pricing}
               </a>
               <div className="pt-3 border-t">
-                <Button variant="ghost" size="sm" className="w-full mb-2">
+                <Button variant="ghost" size="sm" className="w-full mb-2" onClick={handleAuthClick}>
                   {currentContent.nav.login}
                 </Button>
-                <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
-                  {currentContent.nav.signup}
-                </Button>
+                {!user && (
+                  <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleAuthClick}>
+                    {currentContent.nav.signup}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -524,7 +540,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up delay-500">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105" onClick={handleAuthClick}>
                 {currentContent.hero.cta}
                 <ArrowRight className="ml-2 rtl:mr-2 rtl:ml-0 h-5 w-5" />
               </Button>
@@ -751,7 +767,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Newsletter Section - قسم النشرة الإخبارية */}
+      {/* Newsletter Section */}
       <section className="py-20 bg-gradient-to-br from-emerald-600 via-emerald-700 to-blue-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="absolute top-0 left-0 w-full h-full">
@@ -830,7 +846,7 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full mt-6" variant="outline">
+                <Button className="w-full mt-6" variant="outline" onClick={handleAuthClick}>
                   {language === 'ar' ? 'ابدأ مجاناً' : 'Commencer gratuitement'}
                 </Button>
               </CardContent>
@@ -859,7 +875,7 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700">
+                <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700" onClick={handleAuthClick}>
                   {language === 'ar' ? 'اشترك الآن' : 'S\'abonner maintenant'}
                 </Button>
               </CardContent>
@@ -909,7 +925,7 @@ export default function Home() {
             {currentContent.cta.description}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-white text-emerald-600 hover:bg-emerald-50 px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+            <Button size="lg" className="bg-white text-emerald-600 hover:bg-emerald-50 px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105" onClick={handleAuthClick}>
               {currentContent.cta.button}
               <ArrowRight className="ml-2 rtl:mr-2 rtl:ml-0 h-5 w-5" />
             </Button>
