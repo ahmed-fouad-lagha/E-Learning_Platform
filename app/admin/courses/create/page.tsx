@@ -17,14 +17,17 @@ import { ArrowLeft, Save, Eye } from 'lucide-react';
 
 const courseSchema = z.object({
   title: z.string().min(1, 'عنوان الدورة مطلوب'),
+  titleAr: z.string().min(1, 'العنوان بالعربية مطلوب'),
   description: z.string().min(1, 'وصف الدورة مطلوب'),
+  descriptionAr: z.string().min(1, 'الوصف بالعربية مطلوب'),
   subject: z.string().min(1, 'المادة مطلوبة'),
   grade: z.string().min(1, 'المستوى مطلوب'),
-  level: z.string().min(1, 'مستوى الصعوبة مطلوب'),
-  duration_hours: z.number().min(1, 'مدة الدورة مطلوبة'),
-  price: z.number().min(0, 'السعر يجب أن يكون صفر أو أكثر'),
-  is_free: z.boolean(),
-  is_published: z.boolean()
+  difficulty: z.string().min(1, 'مستوى الصعوبة مطلوب'),
+  curriculum: z.string().min(1, 'رمز المنهاج مطلوب'),
+  bacRelevance: z.number().min(0).max(1),
+  estimatedHours: z.number().min(1, 'عدد الساعات مطلوب'),
+  isFree: z.boolean(),
+  isPublished: z.boolean()
 });
 
 type CourseInput = z.infer<typeof courseSchema>;
@@ -43,26 +46,30 @@ export default function CreateCourse() {
   } = useForm<CourseInput>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
-      is_free: false,
-      is_published: false,
-      price: 0,
-      duration_hours: 1
+      isFree: false,
+      isPublished: false,
+      bacRelevance: 0.5,
+      estimatedHours: 1
     }
   });
 
-  const watchIsFree = watch('is_free');
+  const watchIsFree = watch('isFree');
 
   const subjects = [
     { value: 'MATHEMATICS', label: 'الرياضيات' },
     { value: 'PHYSICS', label: 'الفيزياء' },
     { value: 'CHEMISTRY', label: 'الكيمياء' },
     { value: 'BIOLOGY', label: 'علوم الطبيعة والحياة' },
-    { value: 'LITERATURE', label: 'اللغة العربية وآدابها' },
+    { value: 'ARABIC_LITERATURE', label: 'اللغة العربية وآدابها' },
     { value: 'FRENCH', label: 'اللغة الفرنسية' },
     { value: 'ENGLISH', label: 'اللغة الإنجليزية' },
     { value: 'PHILOSOPHY', label: 'الفلسفة' },
-    { value: 'HISTORY', label: 'التاريخ والجغرافيا' },
-    { value: 'ISLAMIC', label: 'التربية الإسلامية' }
+    { value: 'HISTORY', label: 'التاريخ' },
+    { value: 'GEOGRAPHY', label: 'الجغرافيا' },
+    { value: 'ISLAMIC_STUDIES', label: 'التربية الإسلامية' },
+    { value: 'ECONOMICS', label: 'الاقتصاد' },
+    { value: 'ACCOUNTING', label: 'المحاسبة' },
+    { value: 'COMPUTER_SCIENCE', label: 'الإعلام الآلي' }
   ];
 
   const grades = [
@@ -72,34 +79,45 @@ export default function CreateCourse() {
     { value: 'DEUXIEME_AL', label: 'الثانية ثانوي آداب' },
     { value: 'TERMINALE_AS', label: 'الثالثة ثانوي علوم تجريبية' },
     { value: 'TERMINALE_AL', label: 'الثالثة ثانوي آداب وفلسفة' },
-    { value: 'TERMINALE_AM', label: 'الثالثة ثانوي رياضيات' },
-    { value: 'TERMINALE_ATM', label: 'الثالثة ثانوي تقني رياضي' },
-    { value: 'TERMINALE_AGE', label: 'الثالثة ثانوي تسيير واقتصاد' }
+    { value: 'TERMINALE_TM', label: 'الثالثة ثانوي تقني رياضي' },
+    { value: 'TERMINALE_GE', label: 'الثالثة ثانوي تسيير واقتصاد' }
   ];
 
-  const levels = [
+  const difficulties = [
     { value: 'BEGINNER', label: 'مبتدئ' },
     { value: 'INTERMEDIATE', label: 'متوسط' },
-    { value: 'ADVANCED', label: 'متقدم' }
+    { value: 'ADVANCED', label: 'متقدم' },
+    { value: 'BAC_LEVEL', label: 'مستوى البكالوريا' }
   ];
 
   const onSubmit = async (data: CourseInput) => {
     setIsLoading(true);
     
     try {
-      // Here you would make an API call to create the course
-      console.log('Creating course:', data);
-      
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: 'تم إنشاء الدورة بنجاح',
-        description: 'يمكنك الآن إضافة الوحدات والدروس',
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
 
-      // Redirect to course management or edit page
-      router.push('/admin/courses');
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: 'تم إنشاء الدورة بنجاح',
+          description: 'يمكنك الآن إضافة الدروس والمحتوى',
+        });
+
+        router.push(`/admin/courses/${result.data.id}`);
+      } else {
+        toast({
+          title: 'خطأ في إنشاء الدورة',
+          description: result.error || 'حدث خطأ غير متوقع',
+          variant: 'destructive',
+        });
+      }
       
     } catch (error) {
       toast({
@@ -152,29 +170,58 @@ export default function CreateCourse() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">عنوان الدورة</Label>
-                <Input
-                  id="title"
-                  placeholder="مثال: الرياضيات - الدوال الأسية واللوغاريتمية"
-                  {...register('title')}
-                />
-                {errors.title && (
-                  <p className="text-sm text-red-600">{errors.title.message}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">عنوان الدورة (بالإنجليزية)</Label>
+                  <Input
+                    id="title"
+                    placeholder="Mathematics - Exponential Functions"
+                    {...register('title')}
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-red-600">{errors.title.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="titleAr">عنوان الدورة (بالعربية)</Label>
+                  <Input
+                    id="titleAr"
+                    placeholder="الرياضيات - الدوال الأسية"
+                    {...register('titleAr')}
+                  />
+                  {errors.titleAr && (
+                    <p className="text-sm text-red-600">{errors.titleAr.message}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">وصف الدورة</Label>
-                <Textarea
-                  id="description"
-                  placeholder="وصف شامل للدورة ومحتواها وأهدافها التعليمية..."
-                  rows={4}
-                  {...register('description')}
-                />
-                {errors.description && (
-                  <p className="text-sm text-red-600">{errors.description.message}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">وصف الدورة (بالإنجليزية)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Comprehensive study of exponential and logarithmic functions..."
+                    rows={4}
+                    {...register('description')}
+                  />
+                  {errors.description && (
+                    <p className="text-sm text-red-600">{errors.description.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="descriptionAr">وصف الدورة (بالعربية)</Label>
+                  <Textarea
+                    id="descriptionAr"
+                    placeholder="دراسة شاملة للدوال الأسية واللوغاريتمية..."
+                    rows={4}
+                    {...register('descriptionAr')}
+                  />
+                  {errors.descriptionAr && (
+                    <p className="text-sm text-red-600">{errors.descriptionAr.message}</p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -217,52 +264,65 @@ export default function CreateCourse() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="level">مستوى الصعوبة</Label>
-                  <Select onValueChange={(value) => setValue('level', value)}>
+                  <Label htmlFor="difficulty">مستوى الصعوبة</Label>
+                  <Select onValueChange={(value) => setValue('difficulty', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر المستوى" />
                     </SelectTrigger>
                     <SelectContent>
-                      {levels.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
+                      {difficulties.map((difficulty) => (
+                        <SelectItem key={difficulty.value} value={difficulty.value}>
+                          {difficulty.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.level && (
-                    <p className="text-sm text-red-600">{errors.level.message}</p>
+                  {errors.difficulty && (
+                    <p className="text-sm text-red-600">{errors.difficulty.message}</p>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="duration_hours">مدة الدورة (بالساعات)</Label>
+                  <Label htmlFor="curriculum">رمز المنهاج (ONEC)</Label>
                   <Input
-                    id="duration_hours"
-                    type="number"
-                    min="1"
-                    placeholder="25"
-                    {...register('duration_hours', { valueAsNumber: true })}
+                    id="curriculum"
+                    placeholder="MATH_3AS_01"
+                    {...register('curriculum')}
                   />
-                  {errors.duration_hours && (
-                    <p className="text-sm text-red-600">{errors.duration_hours.message}</p>
+                  {errors.curriculum && (
+                    <p className="text-sm text-red-600">{errors.curriculum.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">السعر (بالدينار الجزائري)</Label>
+                  <Label htmlFor="bacRelevance">صلة بامتحان البكالوريا (0-1)</Label>
                   <Input
-                    id="price"
+                    id="bacRelevance"
                     type="number"
                     min="0"
-                    placeholder="0"
-                    disabled={watchIsFree}
-                    {...register('price', { valueAsNumber: true })}
+                    max="1"
+                    step="0.1"
+                    placeholder="0.8"
+                    {...register('bacRelevance', { valueAsNumber: true })}
                   />
-                  {errors.price && (
-                    <p className="text-sm text-red-600">{errors.price.message}</p>
+                  {errors.bacRelevance && (
+                    <p className="text-sm text-red-600">{errors.bacRelevance.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estimatedHours">عدد الساعات المقدرة</Label>
+                  <Input
+                    id="estimatedHours"
+                    type="number"
+                    min="1"
+                    placeholder="25"
+                    {...register('estimatedHours', { valueAsNumber: true })}
+                  />
+                  {errors.estimatedHours && (
+                    <p className="text-sm text-red-600">{errors.estimatedHours.message}</p>
                   )}
                 </div>
               </div>
@@ -280,30 +340,27 @@ export default function CreateCourse() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="is_free">دورة مجانية</Label>
+                  <Label htmlFor="isFree">دورة مجانية</Label>
                   <p className="text-sm text-gray-600">
                     جعل الدورة متاحة مجاناً لجميع الطلاب
                   </p>
                 </div>
                 <Switch
-                  id="is_free"
-                  onCheckedChange={(checked) => {
-                    setValue('is_free', checked);
-                    if (checked) setValue('price', 0);
-                  }}
+                  id="isFree"
+                  onCheckedChange={(checked) => setValue('isFree', checked)}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="is_published">نشر الدورة</Label>
+                  <Label htmlFor="isPublished">نشر الدورة</Label>
                   <p className="text-sm text-gray-600">
                     جعل الدورة مرئية للطلاب في المنصة
                   </p>
                 </div>
                 <Switch
-                  id="is_published"
-                  onCheckedChange={(checked) => setValue('is_published', checked)}
+                  id="isPublished"
+                  onCheckedChange={(checked) => setValue('isPublished', checked)}
                 />
               </div>
             </CardContent>

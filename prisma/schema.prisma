@@ -1,0 +1,413 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String
+  avatar    String?
+  role      UserRole @default(STUDENT)
+  isVerified Boolean @default(false)
+  
+  // Student specific fields
+  grade     Grade?
+  wilaya    String? // Algerian administrative division
+  school    String?
+  parentPhone String?
+  
+  // Subscription
+  subscription UserSubscription @default(FREE)
+  subscriptionExpiry DateTime?
+  
+  // Learning progress
+  totalPoints Int @default(0)
+  streak      Int @default(0)
+  lastActive  DateTime @default(now())
+  
+  // Relations
+  enrollments   CourseEnrollment[]
+  submissions   ExamSubmission[]
+  studyGroups   StudyGroupMember[]
+  createdGroups StudyGroup[]
+  forumPosts    ForumPost[]
+  forumReplies  ForumReply[]
+  notifications Notification[]
+  progress      LearningProgress[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("users")
+}
+
+model Course {
+  id          String     @id @default(cuid())
+  title       String
+  titleAr     String
+  description String
+  descriptionAr String
+  subject     Subject
+  grade       Grade
+  difficulty  Difficulty @default(BEGINNER)
+  thumbnail   String?
+  isPublished Boolean    @default(false)
+  isFree      Boolean    @default(false)
+  
+  // ONEC curriculum alignment
+  curriculum  String // ONEC curriculum code
+  bacRelevance Float @default(0) // 0-1 score for BAC exam relevance
+  
+  // Content
+  totalLessons    Int @default(0)
+  estimatedHours  Int @default(0)
+  
+  // Relations
+  lessons      Lesson[]
+  enrollments  CourseEnrollment[]
+  exams        Exam[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("courses")
+}
+
+model Lesson {
+  id          String      @id @default(cuid())
+  title       String
+  titleAr     String
+  content     String
+  contentAr   String
+  videoUrl    String?
+  audioUrl    String? // For offline/low-bandwidth access
+  order       Int
+  duration    Int // in minutes
+  isCompleted Boolean @default(false)
+  
+  // Offline support
+  downloadSize Int? // in bytes
+  offlineContent String? // JSON with offline resources
+  
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  progress LearningProgress[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("lessons")
+}
+
+model CourseEnrollment {
+  id           String   @id @default(cuid())
+  userId       String
+  courseId     String
+  enrolledAt   DateTime @default(now())
+  completedAt  DateTime?
+  progress     Float    @default(0) // 0-100 percentage
+  
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, courseId])
+  @@map("course_enrollments")
+}
+
+model LearningProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  courseId  String
+  completed Boolean  @default(false)
+  timeSpent Int      @default(0) // in seconds
+  score     Float?   // for assessments
+  
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, lessonId])
+  @@map("learning_progress")
+}
+
+model Exam {
+  id          String     @id @default(cuid())
+  title       String
+  titleAr     String
+  description String?
+  descriptionAr String?
+  type        ExamType
+  subject     Subject
+  grade       Grade
+  duration    Int // in minutes
+  totalPoints Int
+  passScore   Int
+  
+  // BAC exam simulation
+  isBacSimulation Boolean @default(false)
+  bacYear         Int?
+  bacSession      BacSession?
+  
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id])
+  
+  // Relations
+  questions   ExamQuestion[]
+  submissions ExamSubmission[]
+  
+  isPublished Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id          String       @id @default(cuid())
+  question    String
+  questionAr  String
+  type        QuestionType
+  points      Int          @default(1)
+  order       Int
+  
+  // Multiple choice options
+  options     String? // JSON array for multiple choice
+  optionsAr   String? // JSON array for Arabic options
+  correctAnswer String
+  explanation   String?
+  explanationAr String?
+  
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("exam_questions")
+}
+
+model ExamSubmission {
+  id          String   @id @default(cuid())
+  userId      String
+  examId      String
+  answers     String // JSON with user answers
+  score       Float
+  totalPoints Int
+  percentage  Float
+  timeSpent   Int // in seconds
+  submittedAt DateTime @default(now())
+  
+  // AI grading for essay questions
+  aiGraded    Boolean @default(false)
+  aiComments  String? // JSON with AI feedback
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  
+  @@map("exam_submissions")
+}
+
+model StudyGroup {
+  id          String    @id @default(cuid())
+  name        String
+  nameAr      String
+  description String?
+  descriptionAr String?
+  subject     Subject
+  grade       Grade
+  maxMembers  Int       @default(10)
+  isPublic    Boolean   @default(true)
+  
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+  
+  // Relations
+  members StudyGroupMember[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id      String @id @default(cuid())
+  userId  String
+  groupId String
+  role    GroupRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, groupId])
+  @@map("study_group_members")
+}
+
+model ForumPost {
+  id        String   @id @default(cuid())
+  title     String
+  titleAr   String
+  content   String
+  contentAr String
+  subject   Subject
+  grade     Grade?
+  isSticky  Boolean  @default(false)
+  isPinned  Boolean  @default(false)
+  views     Int      @default(0)
+  likes     Int      @default(0)
+  
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+  
+  // Relations
+  replies ForumReply[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("forum_posts")
+}
+
+model ForumReply {
+  id        String @id @default(cuid())
+  content   String
+  contentAr String
+  likes     Int    @default(0)
+  
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+  
+  postId String
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Nested replies
+  parentId String?
+  parent   ForumReply?  @relation("ReplyReplies", fields: [parentId], references: [id])
+  replies  ForumReply[] @relation("ReplyReplies")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("forum_replies")
+}
+
+model Notification {
+  id      String           @id @default(cuid())
+  title   String
+  titleAr String
+  message String
+  messageAr String
+  type    NotificationType
+  isRead  Boolean          @default(false)
+  
+  // SMS notification
+  sentViaSms Boolean @default(false)
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  STUDENT
+  TEACHER
+  PARENT
+  ADMIN
+}
+
+enum UserSubscription {
+  FREE
+  PREMIUM
+  SCHOOL_LICENSE
+}
+
+enum Grade {
+  PREMIERE_AS // 1ère AS (Sciences)
+  PREMIERE_AL // 1ère AL (Lettres)
+  DEUXIEME_AS // 2ème AS (Sciences)
+  DEUXIEME_AL // 2ème AL (Lettres)
+  TERMINALE_AS // Terminale AS (Sciences)
+  TERMINALE_AL // Terminale AL (Lettres)
+  TERMINALE_TM // Terminale TM (Technique Mathématiques)
+  TERMINALE_GE // Terminale GE (Gestion Économie)
+}
+
+enum Subject {
+  MATHEMATICS
+  PHYSICS
+  CHEMISTRY
+  BIOLOGY
+  ARABIC_LITERATURE
+  FRENCH
+  ENGLISH
+  HISTORY
+  GEOGRAPHY
+  PHILOSOPHY
+  ISLAMIC_STUDIES
+  ECONOMICS
+  ACCOUNTING
+  COMPUTER_SCIENCE
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  BAC_LEVEL
+}
+
+enum ExamType {
+  PRACTICE
+  ASSESSMENT
+  BAC_SIMULATION
+  FINAL_EXAM
+}
+
+enum BacSession {
+  JUIN
+  SEPTEMBRE
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  CALCULATION
+}
+
+enum GroupRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum NotificationType {
+  COURSE_UPDATE
+  EXAM_RESULT
+  GROUP_INVITATION
+  SYSTEM_ALERT
+  BAC_REMINDER
+  STREAK_ACHIEVEMENT
+}
