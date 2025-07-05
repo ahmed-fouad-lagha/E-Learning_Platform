@@ -1,0 +1,18 @@
+# Robots.txt for E-Learning Platform Algeria
+User-agent: *
+Allow: /
+
+# Allow crawling of public pages
+Allow: /auth
+Allow: /courses
+Allow: /about
+Allow: /contact
+
+# Disallow private/admin areas
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/user
+
+# Sitemap location
+Sitemap: https://edudz.com/sitemap.xml

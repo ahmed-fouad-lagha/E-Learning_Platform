@@ -17,11 +17,12 @@ const createLessonSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const { courseId } = await params;
     const lessons = await prisma.lesson.findMany({
-      where: { courseId: params.id },
+      where: { courseId },
       orderBy: { order: 'asc' },
       include: {
         progress: true,
@@ -49,15 +50,16 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const { courseId } = await params;
     const body = await request.json();
     const validatedData = createLessonSchema.parse(body);
 
     // Check if course exists
     const course = await prisma.course.findUnique({
-      where: { id: params.id }
+      where: { id: courseId }
     });
 
     if (!course) {
@@ -70,7 +72,7 @@ export async function POST(
     const lesson = await prisma.lesson.create({
       data: {
         ...validatedData,
-        courseId: params.id
+        courseId
       },
       include: {
         progress: true
@@ -79,7 +81,7 @@ export async function POST(
 
     // Update course total lessons count
     await prisma.course.update({
-      where: { id: params.id },
+      where: { id: courseId },
       data: {
         totalLessons: {
           increment: 1

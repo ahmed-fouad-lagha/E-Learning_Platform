@@ -1,0 +1,17 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#2563eb"/>
+  
+  <!-- Simple book icon for favicon -->
+  <rect x="8" y="10" width="16" height="12" rx="2" fill="white"/>
+  <rect x="8" y="10" width="3" height="12" rx="1.5" fill="#e2e8f0"/>
+  
+  <!-- Simple lines for text -->
+  <line x1="13" y1="14" x2="21" y2="14" stroke="#64748b" stroke-width="1"/>
+  <line x1="13" y1="17" x2="21" y2="17" stroke="#64748b" stroke-width="1"/>
+  <line x1="13" y1="20" x2="19" y2="20" stroke="#64748b" stroke-width="1"/>
+  
+  <!-- Academic indicator -->
+  <circle cx="26" cy="6" r="3" fill="#10b981"/>
+  <text x="26" y="8" font-family="serif" font-size="4" fill="white" text-anchor="middle">∑</text>
+</svg>
