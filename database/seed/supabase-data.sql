@@ -34,8 +34,8 @@ content_ar = EXCLUDED.content_ar,
 updated_at = now();
 
 -- Insert sample exam
-INSERT INTO public.exams (id, title, title_ar, description, description_ar, subject, grade, duration, total_marks, is_published, exam_type, course_id) VALUES
-('math-bac-practice-1', 'Mathematics BAC Practice Exam 1', 'امتحان الرياضيات التطبيقي للبكالوريا 1', 'Practice exam based on previous BAC mathematics papers', 'امتحان تطبيقي مبني على أوراق الرياضيات السابقة للبكالوريا', 'MATHEMATICS', 'TERMINALE_AS', 180, 20, true, 'BAC_SIMULATION', 'math-bac-2025')
+INSERT INTO public.exams (id, title, title_ar, description, description_ar, subject, grade, duration, total_marks, total_points, pass_score, is_published, exam_type, course_id) VALUES
+('math-bac-practice-1', 'Mathematics BAC Practice Exam 1', 'امتحان الرياضيات التطبيقي للبكالوريا 1', 'Practice exam based on previous BAC mathematics papers', 'امتحان تطبيقي مبني على أوراق الرياضيات السابقة للبكالوريا', 'MATHEMATICS', 'TERMINALE_AS', 180, 20, 20, 10, true, 'BAC_SIMULATION', 'math-bac-2025')
 ON CONFLICT (id) DO UPDATE SET
 title = EXCLUDED.title,
 title_ar = EXCLUDED.title_ar,

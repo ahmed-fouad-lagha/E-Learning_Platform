@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginForm } from '@/components/auth/login-form';
-import { RegisterForm } from '@/components/auth/register-form';
+import { EnhancedLoginForm } from '@/components/auth/enhanced-login-form';
+import { EnhancedSignupForm } from '@/components/auth/enhanced-signup-form';
 import { GraduationCap, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -52,7 +52,7 @@ export default function AuthPage() {
             <Alert className="border-amber-200 bg-amber-50">
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
-                <strong>إعداد مطلوب:</strong> يرجى الضغط على "Connect to Supabase" في الأعلى لإعداد قاعدة البيانات قبل استخدام ميزات التسجيل وتسجيل الدخول.
+                <strong>إعداد مطلوب:</strong> يرجى الضغط على &quot;Connect to Supabase&quot; في الأعلى لإعداد قاعدة البيانات قبل استخدام ميزات التسجيل وتسجيل الدخول.
               </AlertDescription>
             </Alert>
           </div>
@@ -61,10 +61,20 @@ export default function AuthPage() {
         {/* Auth Forms */}
         <div className="flex justify-center">
           {isLogin ? (
-            <LoginForm onSwitchToRegister={() => setIsLogin(false)} />
+            <EnhancedLoginForm />
           ) : (
-            <RegisterForm onSwitchToLogin={() => setIsLogin(true)} />
+            <EnhancedSignupForm />
           )}
+        </div>
+
+        {/* Toggle between Login and Signup */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+          >
+            {isLogin ? 'ليس لديك حساب؟ سجل الآن' : 'لديك حساب بالفعل؟ سجل الدخول'}
+          </button>
         </div>
 
         {/* Footer */}

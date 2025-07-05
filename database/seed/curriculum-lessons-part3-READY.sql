@@ -295,14 +295,6 @@ Analyze the character of Phèdre as a tragic heroine. How does Racine use her in
 - القدرية والعدالة الإلهية
 - الفداء من خلال المعاناة
 
-**BAC-Style Question:**
-Analyze the character of Phèdre as a tragic heroine. How does Racine use her internal conflict to explore themes of guilt, passion, and fate?',
-
-'**أهداف التعلم:**
-- مقارنة النهج النفسي لراسين مع الأسلوب البطولي لكورناي
-- تحليل دور العاطفة والقدر في مأساة راسين
-- فحص استخدام راسين للأساطير الكلاسيكية والمصادر التوراتية
-
 **المحتوى:**
 أتقن جان راسين (1639-1699) المأساة الكلاسيكية الفرنسية من خلال التركيز على العذاب النفسي الداخلي لشخصياته.
 
@@ -362,8 +354,9 @@ Analyze the character of Phèdre as a tragic heroine. How does Racine use her in
 - القدرية والعدالة الإلهية
 - الفداء من خلال المعاناة
 
-**BAC-Style Question:**
-Analyze the character of Phèdre as a tragic heroine. How does Racine use her internal conflict to explore themes of guilt, passion, and fate?',
+**سؤال في نمط البكالوريا:**
+حلل شخصية فيدرا كبطلة مأساوية. كيف يستخدم راسين صراعها الداخلي لاستكشاف موضوعات الذنب والعاطفة والقدر؟',
+3, 60, 'french-classical-term-al'),
 
 -- Continue with more French Literature lessons...
 ('french-class-04', 'Molière and Classical Comedy', 'موليير والكوميديا الكلاسيكية',
@@ -504,6 +497,15 @@ How does Molière use the character of Tartuffe to critique both religious hypoc
 
 **BAC-Style Question:**
 How does Molière use the character of Tartuffe to critique both religious hypocrisy and social gullibility? Analyze specific scenes to support your argument.',
+
+'**أهداف التعلم:**
+- فهم السياق التاريخي للأدب الفرنسي الكلاسيكي
+- تحليل تقنيات موليير الكوميدية
+- تقييم النقد الاجتماعي في أعماله
+
+**المحتوى:**
+موليير (1622-1673) هو أعظم كاتب كوميدي في المسرح الفرنسي والأدب العالمي.',
+4, 60, 'french-classical-term-al'),
 
 -- ==================================================
 -- ISLAMIC STUDIES LESSONS (32 lessons total - 18 + 14)
@@ -882,6 +884,11 @@ Evaluate the administrative and military achievements of Umar ibn al-Khattab. Ho
 
 **BAC-Style Question:**
 Evaluate the administrative and military achievements of Umar ibn al-Khattab. How did his policies establish foundations for the Islamic state system?',
+'**أهداف التعلم:**
+- تحليل التطورات السياسية والإدارية أثناء الخلافة الراشدة
+- فهم انتشار الإسلام خارج الجزيرة العربية
+- فحص تحديات الخلافة والحكم',
+1, 50, 'islamic-civilization-term-al'),
 
 -- Continue with more Islamic Studies lessons...
 ('islamic-ethics-01', 'Foundations of Islamic Ethics (Akhlaq)', 'أسس الأخلاق الإسلامية',
@@ -1184,6 +1191,11 @@ Analyze the concept of justice (Adl) in Islamic ethics. How does it apply to per
 
 **BAC-Style Question:**
 Analyze the concept of justice (Adl) in Islamic ethics. How does it apply to personal behavior, social relationships, and governance? Provide specific examples from Islamic sources.',
+'**أهداف التعلم:**
+- فهم مصادر وأسس الأخلاق الإسلامية
+- تحليل العلاقة بين الإيمان والأخلاق
+- فحص الفضائل الرئيسية وتطبيقاتها العملية',
+1, 45, 'islamic-ethics-term-al'),
 
 -- ==================================================
 -- COMPUTER SCIENCE LESSONS (12 lessons)
@@ -1731,4 +1743,117 @@ Design an algorithm to help a librarian manage book lending. The algorithm shoul
 - **الإخراج**: النتائج التي ينتجها البرنامج (مثل النص المعروض، الملف المحفوظ)
 
 **4. المتغيرات:**
-مواقع تخزين مسماة للبيانات التي يمكن
+مواقع تخزين مسماة للبيانات التي يمكن تغييرها أثناء تنفيذ البرنامج.
+
+**تطبيقات البرمجة:**
+- تطبيقات الهاتف المحمول
+- مواقع الويب
+- الألعاب
+- أنظمة إدارة قواعد البيانات
+
+**سؤال في نمط البكالوريا:**
+صمم خوارزمية لمساعدة أمين مكتبة في إدارة إعارة الكتب. يجب أن تشمل الخوارزمية: (1) التحقق من توفر الكتاب، (2) تسجيل معلومات المستعير، (3) تحديد تاريخ الإرجاع، (4) تحديث حالة الكتاب. قدم حلك باستخدام المخطط الانسيابي والكود الوهمي.',
+'**أهداف التعلم:**
+- فهم ما هي علوم الحاسوب وتطبيقاتها
+- تطوير مهارات التفكير الحاسوبي
+- تعلم استراتيجيات حل المشاكل المستخدمة في علوم الحاسوب',
+1, 60, 'computer-science-term-as'),
+
+('computer-science-intro-term-as', 'Introduction to Programming Concepts', 'مقدمة في مفاهيم البرمجة',
+
+'**Learning Objectives:**
+- Understand basic programming concepts and terminology
+- Learn how to design simple algorithms
+- Introduction to flowcharts and pseudocode
+
+**Content:**
+Programming is the process of creating instructions for computers to solve problems and perform tasks.
+
+**Basic Programming Concepts:**
+
+**1. Algorithm:**
+A step-by-step procedure for solving a problem or completing a task.
+
+**Example - Making Tea:**
+1. Fill kettle with water
+2. Turn on kettle
+3. Wait for water to boil
+4. Place tea bag in cup
+5. Pour hot water into cup
+6. Wait 3-5 minutes
+7. Remove tea bag
+8. Add sugar/milk if desired
+
+**2. Program:**
+An algorithm written in a programming language that can be executed by a computer.
+
+**3. Input and Output:**
+- **Input**: Data provided to the program (e.g., user input, file data)
+- **Output**: Results produced by the program (e.g., displayed text, saved file)
+
+**4. Variables:**
+Named storage locations for data that can be changed during program execution.
+
+**Programming Applications:**
+- Mobile applications
+- Websites
+- Games
+- Database management systems
+
+**BAC-Style Question:**
+Design an algorithm to help a librarian manage book lending. The algorithm should: (1) Check if a book is available, (2) Record borrower information, (3) Set return date, (4) Update book status. Present your solution using both flowchart and pseudocode.',
+
+'**أهداف التعلم:**
+- فهم مفاهيم البرمجة الأساسية والمصطلحات
+- تعلم كيفية تصميم خوارزميات بسيطة
+- مقدمة في المخططات الانسيابية والكود الوهمي
+
+**المحتوى:**
+البرمجة هي عملية إنشاء تعليمات للحاسوب لحل المشاكل وأداء المهام.
+
+**مفاهيم البرمجة الأساسية:**
+
+**1. الخوارزمية:**
+إجراء خطوة بخطوة لحل مشكلة أو إكمال مهمة.
+
+**مثال - إعداد الشاي:**
+1. املأ الغلاية بالماء
+2. شغل الغلاية
+3. انتظر حتى يغلي الماء
+4. ضع كيس الشاي في الكوب
+5. اسكب الماء الساخن في الكوب
+6. انتظر 3-5 دقائق
+7. أخرج كيس الشاي
+8. أضف السكر/الحليب إذا رغبت
+
+**2. البرنامج:**
+خوارزمية مكتوبة بلغة برمجة يمكن للحاسوب تنفيذها.
+
+**3. الإدخال والإخراج:**
+- **الإدخال**: البيانات المقدمة للبرنامج (مثل إدخال المستخدم، بيانات الملف)
+- **الإخراج**: النتائج التي ينتجها البرنامج (مثل النص المعروض، الملف المحفوظ)
+
+**4. المتغيرات:**
+مواقع تخزين مسماة للبيانات التي يمكن تغييرها أثناء تنفيذ البرنامج.
+
+**تطبيقات البرمجة:**
+- تطبيقات الهاتف المحمول
+- مواقع الويب
+- الألعاب
+- أنظمة إدارة قواعد البيانات
+
+**سؤال في نمط البكالوريا:**
+صمم خوارزمية لمساعدة أمين مكتبة في إدارة إعارة الكتب. يجب أن تشمل الخوارزمية: (1) التحقق من توفر الكتاب، (2) تسجيل معلومات المستعير، (3) تحديد تاريخ الإرجاع، (4) تحديث حالة الكتاب. قدم حلك باستخدام المخطط الانسيابي والكود الوهمي.',
+'**أهداف التعلم:**
+- تعلم أساسيات البرمجة والخوارزميات
+- فهم هياكل البيانات الأساسية
+- تطوير مهارات تصميم الخوارزميات',
+1, 45, 'computer-science-term-as')
+ON CONFLICT (id) DO UPDATE SET
+title = EXCLUDED.title,
+title_ar = EXCLUDED.title_ar,
+content = EXCLUDED.content,
+content_ar = EXCLUDED.content_ar,
+order_num = EXCLUDED.order_num,
+duration = EXCLUDED.duration,
+updated_at = now();

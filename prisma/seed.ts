@@ -190,9 +190,11 @@ async function main() {
       subject: 'MATHEMATICS',
       grade: 'TERMINALE_AS',
       duration: 180,
-      totalMarks: 20,
+      totalPoints: 20,
+      passScore: 10,
       isPublished: true,
-      examType: 'BAC_SIMULATION',
+      type: 'BAC_SIMULATION',
+      isBacSimulation: true,
       courseId: mathCourse.id,
     },
   });

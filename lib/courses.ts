@@ -65,15 +65,32 @@ export async function getCourses({
   limit?: number;
 }) {
   try {
-    // Import Supabase client at runtime
-    const { getCoursesSupabase } = await import('./supabase-db');
+    // Use Supabase client directly
+    const { supabase } = await import('./supabase');
     
     // Try Supabase first
     try {
-      const result = await getCoursesSupabase({ subject, grade, isFree, page, limit });
+      let query = supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (subject) query = query.eq('subject', subject);
+      if (grade) query = query.eq('grade', grade);
+      if (typeof isFree === 'boolean') query = query.eq('is_free', isFree);
+      
+      if (page && limit) {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        query = query.range(from, to);
+      }
+      
+      const { data: courses, error, count } = await query;
+      
+      if (error) throw error;
       
       // Transform Supabase results to match our Course type
-      const formattedCourses: Course[] = result.courses.map(course => ({
+      const formattedCourses: Course[] = (courses || []).map(course => ({
         id: course.id,
         title: course.title,
         titleAr: course.title_ar,
@@ -90,7 +107,11 @@ export async function getCourses({
       
       return {
         courses: formattedCourses,
-        pagination: result.pagination
+        pagination: {
+          page: page || 1,
+          limit: limit || 10,
+          total: count || 0
+        }
       };
     } catch (supabaseError) {
       console.warn("Supabase getCourses failed, using mock data:", supabaseError);
@@ -166,41 +187,67 @@ export async function getCourses({
 // Get course details by ID
 export async function getCourseById(courseId: string, userId?: string): Promise<CourseDetail | null> {
   try {
-    // Import Supabase client at runtime
-    const { getCourseByIdSupabase } = await import('./supabase-db');
+    // Use Supabase client directly
+    const { supabase } = await import('./supabase');
     
     // Try Supabase first
     try {
-      const result = await getCourseByIdSupabase(courseId, userId);
-      if (!result) return null;
+      const { data: course, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          lessons(id, title, title_ar, order_num, duration),
+          course_enrollments(enrolled_at, progress, completed_at, count)
+        `)
+        .eq('id', courseId)
+        .single();
+      
+      if (error || !course) return null;
+      
+      let isEnrolled = false;
+      let enrollment = null;
+      
+      if (userId) {
+        const { data: enrollmentData } = await supabase
+          .from('course_enrollments')
+          .select('enrolled_at, progress, completed_at')
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .single();
+
+        if (enrollmentData) {
+          isEnrolled = true;
+          enrollment = {
+            enrolledAt: new Date(enrollmentData.enrolled_at),
+            progress: enrollmentData.progress,
+            completedAt: enrollmentData.completed_at ? new Date(enrollmentData.completed_at) : null
+          };
+        }
+      }
       
       // Transform Supabase result to match our CourseDetail type
       return {
-        id: result.id,
-        title: result.title,
-        titleAr: result.title_ar,
-        description: result.description,
-        descriptionAr: result.description_ar,
-        subject: result.subject,
-        grade: result.grade,
-        thumbnail: result.thumbnail,
-        isFree: result.is_free,
-        totalLessons: result.total_lessons,
-        estimatedHours: result.estimated_hours,
-        enrollmentCount: result.course_enrollments?.[0]?.count || 0,
-        lessons: result.lessons.map(lesson => ({
+        id: course.id,
+        title: course.title,
+        titleAr: course.title_ar,
+        description: course.description,
+        descriptionAr: course.description_ar,
+        subject: course.subject,
+        grade: course.grade,
+        thumbnail: course.thumbnail,
+        isFree: course.is_free,
+        totalLessons: course.total_lessons,
+        estimatedHours: course.estimated_hours,
+        enrollmentCount: course.course_enrollments?.[0]?.count || 0,
+        lessons: (course.lessons || []).map((lesson: any) => ({
           id: lesson.id,
           title: lesson.title,
           titleAr: lesson.title_ar,
           order: lesson.order_num,
           duration: lesson.duration
         })),
-        isEnrolled: result.is_enrolled,
-        enrollment: result.enrollment ? {
-          enrolledAt: new Date(result.enrollment.enrolled_at),
-          progress: result.enrollment.progress,
-          completedAt: result.enrollment.completed_at ? new Date(result.enrollment.completed_at) : null
-        } : null
+        isEnrolled,
+        enrollment
       };
     } catch (supabaseError) {
       console.warn("Supabase getCourseById failed, using mock data:", supabaseError);
@@ -252,12 +299,38 @@ export async function getCourseById(courseId: string, userId?: string): Promise<
 // Enroll a user in a course
 export async function enrollUserInCourse(userId: string, courseId: string) {
   try {
-    // Import Supabase client at runtime
-    const { enrollUserInCourseSupabase } = await import('./supabase-db');
+    // Use Supabase client directly
+    const { supabase } = await import('./supabase');
     
     // Try Supabase first
     try {
-      return await enrollUserInCourseSupabase(userId, courseId);
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .insert([
+          {
+            user_id: userId,
+            course_id: courseId,
+            enrolled_at: new Date().toISOString(),
+            progress: 0
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: "Enrollment successful",
+        enrollment: {
+          id: data.id,
+          userId: data.user_id,
+          courseId: data.course_id,
+          enrolledAt: new Date(data.enrolled_at),
+          progress: data.progress,
+          completedAt: null
+        }
+      };
     } catch (supabaseError) {
       console.warn("Supabase enrollUserInCourse failed, returning mock success:", supabaseError);
       
@@ -284,12 +357,42 @@ export async function enrollUserInCourse(userId: string, courseId: string) {
 // Get all courses a user is enrolled in
 export async function getUserEnrollments(userId: string) {
   try {
-    // Import Supabase client at runtime to avoid issues
-    const { getUserEnrollmentsSupabase } = await import('./supabase-db');
+    // Use Supabase client directly
+    const { supabase } = await import('./supabase');
     
     // Try Supabase first
     try {
-      return await getUserEnrollmentsSupabase(userId);
+      const { data: enrollments, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          *,
+          courses(
+            id,
+            title,
+            title_ar,
+            thumbnail,
+            subject,
+            grade,
+            total_lessons
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return (enrollments || []).map(enrollment => ({
+        id: enrollment.courses.id,
+        title: enrollment.courses.title,
+        titleAr: enrollment.courses.title_ar,
+        thumbnail: enrollment.courses.thumbnail,
+        subject: enrollment.courses.subject,
+        grade: enrollment.courses.grade,
+        totalLessons: enrollment.courses.total_lessons,
+        progress: enrollment.progress,
+        enrolledAt: enrollment.enrolled_at,
+        completedAt: enrollment.completed_at,
+        lastAccessedAt: enrollment.enrolled_at // Placeholder
+      }));
     } catch (supabaseError) {
       console.warn("Supabase getUserEnrollments failed, using mock data:", supabaseError);
       
