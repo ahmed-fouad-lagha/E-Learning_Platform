@@ -1,11 +1,15 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XCircle, ArrowRight } from 'lucide-react';
+import { XCircle, ArrowRight, Loader2 } from 'lucide-react';
 
-export default function PaymentCancelPage() {
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
+function PaymentCancelContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -89,5 +93,24 @@ export default function PaymentCancelPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentCancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-red-600 mx-auto mb-4" />
+              <p>جاري التحميل...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <PaymentCancelContent />
+    </Suspense>
   );
 }

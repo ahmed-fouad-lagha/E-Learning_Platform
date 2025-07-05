@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,20 +50,24 @@ interface Lesson {
   is_published: boolean;
 }
 
-export default function CourseDetails({ params }: { params: { id: string } }) {
+export default function CourseDetails() {
+  const { courseId } = useParams() as { courseId: string };
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    fetchCourse();
-  }, [params.id]);
+    if (courseId) {
+      fetchCourse();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
 
   const fetchCourse = async () => {
     try {
       // Mock data - replace with actual API call
       const mockCourse: Course = {
-        id: params.id,
+        id: courseId,
         title: 'الرياضيات - الدوال الأسية واللوغاريتمية',
         description: 'دراسة شاملة للدوال الأسية واللوغاريتمية مع تطبيقات عملية وحلول مفصلة للتمارين',
         subject: 'MATHEMATICS',

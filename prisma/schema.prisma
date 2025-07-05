@@ -10,12 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Map to Supabase auth.users table
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id // Use UUID from Supabase auth.users
   email     String   @unique
-  phone     String?  @unique
-  password  String
-  name      String
+  phone     String?  
+  // No password field - handled by Supabase auth
+  name      String?  // From user metadata
   avatar    String?
   role      UserRole @default(STUDENT)
   isVerified Boolean @default(false)

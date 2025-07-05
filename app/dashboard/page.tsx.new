@@ -41,7 +41,7 @@ interface EnrolledCourse extends CourseCardProps {
 }
 
 export default function DashboardPage() {
-  const { user, profile, session, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
@@ -60,99 +60,82 @@ export default function DashboardPage() {
       try {
         setIsLoadingCourses(true);
         
-        // If no session/token available, fall back to mock data
-        if (!session?.access_token) {
-          console.warn('No session token available, using mock data');
-          setEnrolledCourses(getMockEnrolledCourses());
+        // Replace with actual API call when ready
+        // const response = await fetch('/api/user/enrolled-courses', {
+        //   headers: {
+        //     'authorization': `Bearer ${user.id}`
+        //   }
+        // });
+        
+        // Mock data for demonstration
+        const mockCourses: EnrolledCourse[] = [
+          {
+            id: 'course1',
+            title: 'Mathematics for BAC Science',
+            titleAr: 'الرياضيات للبكالوريا شعبة علوم',
+            thumbnail: '/images/math-course.jpg',
+            subject: 'MATHEMATICS',
+            grade: 'TERMINALE_AS',
+            isFree: false,
+            enrollmentCount: 243,
+            totalLessons: 24,
+            estimatedHours: 48,
+            progress: 75,
+            lastAccessedAt: '2023-10-15T10:30:00Z',
+            completedLessons: 18
+          },
+          {
+            id: 'course2',
+            title: 'Physics for BAC Science',
+            titleAr: 'الفيزياء للبكالوريا شعبة علوم',
+            thumbnail: '/images/physics-course.jpg',
+            subject: 'PHYSICS',
+            grade: 'TERMINALE_AS',
+            isFree: true,
+            enrollmentCount: 189,
+            totalLessons: 18,
+            estimatedHours: 36,
+            progress: 33,
+            lastAccessedAt: '2023-10-17T14:15:00Z',
+            completedLessons: 6
+          },
+          {
+            id: 'course3',
+            title: 'Arabic Literature',
+            titleAr: 'الأدب العربي',
+            thumbnail: '/images/arabic-course.jpg',
+            subject: 'ARABIC_LITERATURE',
+            grade: 'TERMINALE_AL',
+            isFree: false,
+            enrollmentCount: 120,
+            totalLessons: 15,
+            estimatedHours: 30,
+            progress: 15,
+            lastAccessedAt: '2023-10-18T09:45:00Z',
+            completedLessons: 2
+          }
+        ];
+        
+        // Add a timeout to simulate network delay
+        setTimeout(() => {
+          setEnrolledCourses(mockCourses);
           setIsLoadingCourses(false);
-          return;
-        }
+        }, 1000);
         
-        // Replace mock data with real API call
-        const response = await fetch('/api/user/enrolled-courses', {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setEnrolledCourses(data.data);
-          } else {
-            console.error('Unexpected API response format:', data);
-            // Fall back to mock data if the API call fails
-            setEnrolledCourses(getMockEnrolledCourses());
-          }
-        } else {
-          console.warn('Failed to fetch enrolled courses:', response.status, response.statusText);
-          console.warn('Using mock data as fallback');
-          // Fall back to mock data if the API call fails
-          setEnrolledCourses(getMockEnrolledCourses());
-        }
+        // Real implementation:
+        // if (response.ok) {
+        //   const data = await response.json();
+        //   setEnrolledCourses(data);
+        // }
       } catch (err) {
-        console.warn('Error fetching enrolled courses:', err);
-        console.warn('Using mock data as fallback');
-        // Fall back to mock data if the API call fails
-        setEnrolledCourses(getMockEnrolledCourses());
+        console.error('Failed to fetch enrolled courses:', err);
       } finally {
-        setIsLoadingCourses(false);
+        // setIsLoadingCourses(false);
       }
     };
     
     fetchEnrolledCourses();
-  }, [user, session]);
-
-  // Mock data generator function for fallback
-  const getMockEnrolledCourses = (): EnrolledCourse[] => {
-    return [
-      {
-        id: 'course1',
-        title: 'Mathematics for BAC Science',
-        titleAr: 'الرياضيات للبكالوريا شعبة علوم',
-        thumbnail: '/images/math-course.jpg',
-        subject: 'MATHEMATICS',
-        grade: 'TERMINALE_AS',
-        isFree: false,
-        enrollmentCount: 243,
-        totalLessons: 24,
-        estimatedHours: 48,
-        progress: 75,
-        lastAccessedAt: '2023-10-15T10:30:00Z',
-        completedLessons: 18
-      },
-      {
-        id: 'course2',
-        title: 'Physics for BAC Science',
-        titleAr: 'الفيزياء للبكالوريا شعبة علوم',
-        thumbnail: '/images/physics-course.jpg',
-        subject: 'PHYSICS',
-        grade: 'TERMINALE_AS',
-        isFree: true,
-        enrollmentCount: 189,
-        totalLessons: 18,
-        estimatedHours: 36,
-        progress: 33,
-        lastAccessedAt: '2023-10-17T14:15:00Z',
-        completedLessons: 6
-      },
-      {
-        id: 'course3',
-        title: 'Arabic Literature',
-        titleAr: 'الأدب العربي',
-        thumbnail: '/images/arabic-course.jpg',
-        subject: 'ARABIC_LITERATURE',
-        grade: 'TERMINALE_AL',
-        isFree: false,
-        enrollmentCount: 120,
-        totalLessons: 15,
-        estimatedHours: 30,
-        progress: 15,
-        lastAccessedAt: '2023-10-18T09:45:00Z',
-        completedLessons: 2
-      }
-    ];
-  };
+  }, [user]);
 
   if (loading) {
     return (

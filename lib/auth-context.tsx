@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           school: userData.school,
           parent_phone: userData.parentPhone,
           date_of_birth: userData.dateOfBirth,
+          is_verified: true, // Mark users as verified by default (no SMS verification)
         });
 
       if (profileError) throw profileError;

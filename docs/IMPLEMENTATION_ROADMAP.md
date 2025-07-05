@@ -21,17 +21,17 @@
   - [ ] Connect registration/login APIs to UI forms
   - [ ] Implement role-based routing (Student/Teacher/Parent/Admin)
   - [ ] Build user profile pages with Algerian context (wilaya selector, school dropdown)
-  - [ ] Add phone number verification with SMS integration
+  - [-] Add phone number verification with SMS integration (skipped to avoid SMS costs)
   - [ ] Implement RTL layout switching for Arabic users
 
 - **Deliverables**:
   - Functional user registration/login flow
   - Role-based dashboard prototypes
-  - SMS verification working with Mobilis/Djezzy
+  - [-] SMS verification working with Mobilis/Djezzy (skipped to avoid SMS costs)
 
 - **Acceptance Criteria**:
   - Users can register with Algerian phone numbers (+213)
-  - SMS verification works in Arabic/French
+  - [-] SMS verification works in Arabic/French (skipped to avoid SMS costs)
   - Profile shows wilaya and BAC track selection
 
 #### Week 2: Course Discovery & Enrollment
@@ -541,7 +541,7 @@ Rationale: Local talent crucial for cultural context and Arabic support
 ### Epic Structure
 ```
 Epic 1: User Management & Authentication
-├── Story: User Registration with SMS Verification
+├── Story: User Registration (SMS Verification skipped to avoid costs)
 ├── Story: Role-based Dashboard Implementation  
 ├── Story: Profile Management with Algerian Context
 └── Story: Password Reset via SMS

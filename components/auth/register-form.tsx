@@ -24,8 +24,8 @@ const registerSchema = z.object({
   grade: z.string().optional(),
   wilaya: z.string().optional(),
   school: z.string().optional(),
-  parentPhone: z.string().optional(),
   dateOfBirth: z.string().optional(),
+  parentPhone: z.string().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: 'يجب الموافقة على الشروط والأحكام',
   }),

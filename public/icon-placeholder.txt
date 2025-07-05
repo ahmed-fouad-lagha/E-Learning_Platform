@@ -1,0 +1,5 @@
+# PWA Icons
+# These are placeholder files to prevent 404 errors
+# You should replace these with actual icon files later
+
+# For now, we'll create simple SVG icons that can be converted to PNG
