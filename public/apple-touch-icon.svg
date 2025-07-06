@@ -1,48 +1,38 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background optimized for iOS -->
+<svg width="180" height="180" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
   <defs>
-    <linearGradient id="iosBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="iosAccent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    <linearGradient id="book-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
     </linearGradient>
   </defs>
   
-  <!-- iOS style rounded square (no border radius needed, iOS handles this) -->
-  <rect width="180" height="180" fill="url(#iosBg)"/>
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="url(#bg-gradient)"/>
   
-  <!-- Centered education icon optimized for iOS -->
-  <g transform="translate(90, 90)">
-    <!-- Book -->
-    <g transform="translate(-32, -16)">
-      <rect width="64" height="48" rx="6" fill="white" opacity="0.95"/>
-      <rect x="4" y="4" width="56" height="40" rx="3" fill="#f8fafc"/>
-      
-      <!-- Book spine -->
-      <rect width="8" height="48" rx="4" fill="white"/>
-      
-      <!-- Text lines -->
-      <line x1="12" y1="12" x2="52" y2="12" stroke="#64748b" stroke-width="1.5" opacity="0.7"/>
-      <line x1="12" y1="20" x2="52" y2="20" stroke="#64748b" stroke-width="1.5" opacity="0.7"/>
-      <line x1="12" y1="28" x2="48" y2="28" stroke="#64748b" stroke-width="1.5" opacity="0.7"/>
-      <line x1="12" y1="36" x2="50" y2="36" stroke="#64748b" stroke-width="1.5" opacity="0.7"/>
-    </g>
-    
-    <!-- Graduation cap above -->
-    <g transform="translate(0, -45)">
-      <ellipse cx="0" cy="6" rx="28" ry="8" fill="url(#iosAccent)"/>
-      <polygon points="-28,6 0,-4 28,6 24,9 0,1 -24,9" fill="url(#iosAccent)"/>
-      <!-- Simple tassel -->
-      <circle cx="22" cy="12" r="3" fill="url(#iosAccent)"/>
-      <line x1="22" y1="15" x2="22" y2="24" stroke="url(#iosAccent)" stroke-width="2"/>
-    </g>
-    
-    <!-- Academic symbol -->
-    <g transform="translate(0, 35)">
-      <text x="0" y="0" font-family="serif" font-size="24" fill="white" text-anchor="middle" opacity="0.9">∑</text>
-    </g>
+  <!-- Open book icon -->
+  <g transform="translate(6, 8)">
+    <!-- Left page -->
+    <path d="M2 2 C2 2, 8 4, 10 6 L10 14 C8 12, 2 10, 2 10 Z" fill="url(#book-gradient)" stroke="white" stroke-width="0.5"/>
+    <!-- Right page -->
+    <path d="M18 2 C18 2, 12 4, 10 6 L10 14 C12 12, 18 10, 18 10 Z" fill="url(#book-gradient)" stroke="white" stroke-width="0.5"/>
+    <!-- Spine -->
+    <line x1="10" y1="6" x2="10" y2="14" stroke="white" stroke-width="1"/>
+    <!-- Pages lines -->
+    <line x1="4" y1="8" x2="8" y2="8.5" stroke="#1d4ed8" stroke-width="0.3"/>
+    <line x1="4" y1="10" x2="8" y2="10.5" stroke="#1d4ed8" stroke-width="0.3"/>
+    <line x1="12" y1="8.5" x2="16" y2="8" stroke="#1d4ed8" stroke-width="0.3"/>
+    <line x1="12" y1="10.5" x2="16" y2="10" stroke="#1d4ed8" stroke-width="0.3"/>
+  </g>
+  
+  <!-- Graduation cap accent -->
+  <g transform="translate(20, 4)">
+    <rect x="0" y="0" width="8" height="2" rx="1" fill="#10b981"/>
+    <polygon points="2,2 6,2 4,4" fill="#10b981"/>
+    <circle cx="7" cy="2.5" r="0.5" fill="#fbbf24"/>
   </g>
 </svg>

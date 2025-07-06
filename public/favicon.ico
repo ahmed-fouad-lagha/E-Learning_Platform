@@ -1,0 +1,10 @@
+# Favicon Setup Complete! 
+
+To create a proper favicon.ico file:
+
+1. Go to https://favicon.io/favicon-converter/
+2. Upload your favicon.svg file
+3. Download the generated favicon.ico
+4. Replace this file with the downloaded favicon.ico
+
+For now, browsers will use the SVG favicon which works perfectly in modern browsers.

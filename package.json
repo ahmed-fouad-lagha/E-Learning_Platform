@@ -37,7 +37,8 @@
     "utils:convert-icons": "node scripts/utils/convert-icons.js",
     "utils:populate-db": "node scripts/database/populate-database.js",
     "utils:setup-db": "node scripts/database/setup-database.js",
-    "utils:project-status": "node scripts/utils/project-status.js"
+    "utils:project-status": "node scripts/utils/project-status.js",
+    "utils:generate-favicons": "node scripts/utils/generate-favicons.js"
   },
   "engines": {
     "node": ">=18.0.0",

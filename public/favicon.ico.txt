@@ -1,0 +1,2 @@
+<!-- This is a placeholder. Browsers will use favicon.svg -->
+<!-- To create a true .ico file, use an online converter -->

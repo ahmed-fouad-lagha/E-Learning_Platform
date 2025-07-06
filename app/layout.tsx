@@ -51,9 +51,28 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    shortcut: '/favicon.svg',
+    apple: [
+      { url: '/apple-touch-icon.svg', sizes: '180x180', type: 'image/svg+xml' }
+    ],
+    other: [
+      {
+        rel: 'icon',
+        type: 'image/svg+xml', 
+        sizes: '192x192',
+        url: '/icon-192x192.svg',
+      },
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        sizes: '512x512', 
+        url: '/icon-512x512.svg',
+      }
+    ]
   },
 };
 
