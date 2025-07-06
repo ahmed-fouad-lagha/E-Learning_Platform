@@ -7,17 +7,37 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts",
-    "db:setup": "npx prisma generate && npx prisma migrate dev --name init && npm run prisma:seed",
-    "setup-env": "node scripts/setup-env.js",
-    "setup-interactive": "node scripts/interactive-setup.js",
-    "test-email": "node scripts/test-email.js",
-    "check-ready": "node scripts/check-ready.js",
-    "setup-complete": "npm run setup-env && npm run test-email && npm run check-ready",
-    "vercel-build": "prisma generate && npm run build"
+    "vercel-build": "prisma generate && npm run build",
+    
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:setup": "npx prisma generate && npx prisma migrate dev --name init && npm run db:seed",
+    "db:reset": "prisma migrate reset --force",
+    
+    "setup:env": "node scripts/setup/setup-env.js",
+    "setup:interactive": "node scripts/setup/interactive-setup.js",
+    "setup:production": "node scripts/setup/setup-production-env.js",
+    "setup:vercel": "node scripts/setup/setup-vercel-env.js",
+    "setup:complete": "npm run setup:env && npm run test:email && npm run check:ready",
+    
+    "test:auth": "node tests/auth/auth-test.js",
+    "test:database": "node tests/database/db-test.js",
+    "test:enrollment": "node tests/enrollment-test.js",
+    "test:email": "node scripts/utils/test-email.js",
+    "test:all": "npm run test:auth && npm run test:database && npm run test:enrollment",
+    
+    "check:ready": "node scripts/utils/check-ready.js",
+    "check:tables": "node scripts/utils/check-tables.js",
+    
+    "deploy:verify": "node scripts/deployment/verify-actual-deployment.js",
+    "deploy:fix": "node scripts/deployment/fix-vercel-deployment.js",
+    
+    "utils:convert-icons": "node scripts/utils/convert-icons.js",
+    "utils:populate-db": "node scripts/database/populate-database.js",
+    "utils:setup-db": "node scripts/database/setup-database.js",
+    "utils:project-status": "node scripts/utils/project-status.js"
   },
   "engines": {
     "node": ">=18.0.0",
