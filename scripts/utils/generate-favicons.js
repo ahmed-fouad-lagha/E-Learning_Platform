@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-console.log('🎨 E-Learning Platform - Favicon Generator');
-console.log('='.repeat(50));
-console.log('');
+console.log("🎨 E-Learning Platform - Favicon Generator");
+console.log("=".repeat(50));
+console.log("");
 
 // Read the SVG favicon
-const svgFavicon = fs.readFileSync('./public/favicon.svg', 'utf8');
+const svgFavicon = fs.readFileSync("./public/favicon.svg", "utf8");
 
 // Create different sized icons using SVG
 const createSvgIcon = (size, filename) => {
@@ -16,7 +16,7 @@ const createSvgIcon = (size, filename) => {
     'width="32" height="32" viewBox="0 0 32 32"',
     `width="${size}" height="${size}" viewBox="0 0 32 32"`
   );
-  
+
   fs.writeFileSync(`./public/${filename}`, scaledSvg);
   console.log(`✅ Created: ${filename} (${size}x${size})`);
 };
@@ -62,98 +62,99 @@ const createAppleTouchIcon = () => {
   </g>
 </svg>`;
 
-  fs.writeFileSync('./public/apple-touch-icon.svg', appleSvg);
-  console.log('✅ Created: apple-touch-icon.svg (180x180)');
+  fs.writeFileSync("./public/apple-touch-icon.svg", appleSvg);
+  console.log("✅ Created: apple-touch-icon.svg (180x180)");
 };
 
 // Create the manifest icon sizes
 const createManifestIcons = () => {
   // 192x192 icon
-  createSvgIcon(192, 'icon-192x192.svg');
-  
-  // 512x512 icon  
-  createSvgIcon(512, 'icon-512x512.svg');
+  createSvgIcon(192, "icon-192x192.svg");
+
+  // 512x512 icon
+  createSvgIcon(512, "icon-512x512.svg");
 };
 
 // Create a simple ICO placeholder (browsers will fallback to SVG)
 const createIcoPlaceholder = () => {
   const icoContent = `<!-- This is a placeholder. Browsers will use favicon.svg -->
 <!-- To create a true .ico file, use an online converter -->`;
-  
-  fs.writeFileSync('./public/favicon.ico.txt', icoContent);
-  console.log('✅ Created: favicon.ico.txt (placeholder)');
+
+  fs.writeFileSync("./public/favicon.ico.txt", icoContent);
+  console.log("✅ Created: favicon.ico.txt (placeholder)");
 };
 
 // Update manifest.json
 const updateManifest = () => {
-  const manifestPath = './public/manifest.json';
+  const manifestPath = "./public/manifest.json";
   let manifest = {};
-  
+
   if (fs.existsSync(manifestPath)) {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   }
-  
+
   manifest.icons = [
     {
-      "src": "/icon-192x192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      src: "/icon-192x192.svg",
+      sizes: "192x192",
+      type: "image/svg+xml",
+      purpose: "any maskable",
     },
     {
-      "src": "/icon-512x512.svg", 
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+      src: "/icon-512x512.svg",
+      sizes: "512x512",
+      type: "image/svg+xml",
+      purpose: "any maskable",
+    },
   ];
-  
+
   // Ensure other manifest properties exist
   if (!manifest.name) manifest.name = "E-Learning Platform";
   if (!manifest.short_name) manifest.short_name = "EduDZ";
-  if (!manifest.description) manifest.description = "منصة التعلم الإلكتروني الجزائرية للتحضير لامتحان البكالوريا";
+  if (!manifest.description)
+    manifest.description =
+      "منصة التعلم الإلكتروني الجزائرية للتحضير لامتحان البكالوريا";
   if (!manifest.theme_color) manifest.theme_color = "#3b82f6";
   if (!manifest.background_color) manifest.background_color = "#ffffff";
   if (!manifest.display) manifest.display = "standalone";
   if (!manifest.start_url) manifest.start_url = "/";
-  
+
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  console.log('✅ Updated: manifest.json with new icons');
+  console.log("✅ Updated: manifest.json with new icons");
 };
 
 // Generate all favicon files
-console.log('📱 Generating favicon files...');
-console.log('');
+console.log("📱 Generating favicon files...");
+console.log("");
 
 try {
   createManifestIcons();
   createAppleTouchIcon();
   createIcoPlaceholder();
   updateManifest();
-  
-  console.log('');
-  console.log('🎯 Favicon Generation Complete!');
-  console.log('');
-  console.log('📝 Files Created:');
-  console.log('   • favicon.svg (main favicon)');
-  console.log('   • apple-touch-icon.svg (Apple devices)');
-  console.log('   • icon-192x192.svg (PWA small)');
-  console.log('   • icon-512x512.svg (PWA large)');
-  console.log('   • manifest.json (updated)');
-  console.log('');
-  console.log('⚡ Next Steps:');
-  console.log('   1. Test favicon in browser');
-  console.log('   2. Verify PWA manifest');
-  console.log('   3. Check mobile appearance');
-  console.log('   4. Consider creating favicon.ico for older browsers');
-  console.log('');
-  console.log('🌐 Online ICO Generator:');
-  console.log('   https://favicon.io/favicon-converter/');
-  console.log('   Upload favicon.svg to create favicon.ico');
-  
+
+  console.log("");
+  console.log("🎯 Favicon Generation Complete!");
+  console.log("");
+  console.log("📝 Files Created:");
+  console.log("   • favicon.svg (main favicon)");
+  console.log("   • apple-touch-icon.svg (Apple devices)");
+  console.log("   • icon-192x192.svg (PWA small)");
+  console.log("   • icon-512x512.svg (PWA large)");
+  console.log("   • manifest.json (updated)");
+  console.log("");
+  console.log("⚡ Next Steps:");
+  console.log("   1. Test favicon in browser");
+  console.log("   2. Verify PWA manifest");
+  console.log("   3. Check mobile appearance");
+  console.log("   4. Consider creating favicon.ico for older browsers");
+  console.log("");
+  console.log("🌐 Online ICO Generator:");
+  console.log("   https://favicon.io/favicon-converter/");
+  console.log("   Upload favicon.svg to create favicon.ico");
 } catch (error) {
-  console.error('❌ Error generating favicons:', error.message);
+  console.error("❌ Error generating favicons:", error.message);
 }
 
-console.log('');
-console.log('='.repeat(50));
+console.log("");
+console.log("=".repeat(50));
