@@ -46,6 +46,28 @@ export default function DashboardPage() {
   const router = useRouter();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [forceShowDashboard, setForceShowDashboard] = useState(false);
+  const [directSession, setDirectSession] = useState<any>(null);
+
+  // Direct session check bypass
+  useEffect(() => {
+    const checkDirectSession = async () => {
+      try {
+        const { data: { session: directSess } } = await supabase.auth.getSession();
+        if (directSess) {
+          console.log('Dashboard - Direct session found:', directSess.user?.email);
+          setDirectSession(directSess);
+          setForceShowDashboard(true);
+        }
+      } catch (error) {
+        console.error('Dashboard - Direct session check failed:', error);
+      }
+    };
+
+    if (loading && !user) {
+      checkDirectSession();
+    }
+  }, [loading, user]);
 
   useEffect(() => {
     console.log('Dashboard - Auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
@@ -89,11 +111,34 @@ export default function DashboardPage() {
       const timeout = setTimeout(() => {
         console.log('Dashboard - Loading timeout, attempting session refresh');
         refreshSession();
-      }, 3000); // Wait 3 seconds, then try to refresh
+      }, 1500); // Reduced to 1.5 seconds
 
-      return () => clearTimeout(timeout);
+      // Also try to refresh immediately if we've been loading for a while
+      const immediateTimeout = setTimeout(() => {
+        console.log('Dashboard - Immediate session refresh attempt');
+        refreshSession();
+      }, 500);
+
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(immediateTimeout);
+      };
     }
   }, [loading, refreshSession]);
+
+  // Force refresh session on mount if we detect we should have a session
+  useEffect(() => {
+    const checkSession = async () => {
+      // Check if we have session cookies but no user in context
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !user && !loading) {
+        console.log('Dashboard - Found session but no user, forcing refresh');
+        await refreshSession();
+      }
+    };
+
+    checkSession();
+  }, [user, loading, refreshSession]);
 
   // Fetch enrolled courses
   useEffect(() => {
@@ -147,26 +192,38 @@ export default function DashboardPage() {
   }, [user, session]);
 
   // Show loading state while auth is being determined
-  if (loading) {
+  if (loading && !forceShowDashboard) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-          >
-            Refresh Page
-          </Button>
+          <div className="mt-4 space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()} 
+              size="sm"
+            >
+              Refresh Page
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setForceShowDashboard(true)} 
+              size="sm"
+            >
+              Continue
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            If loading takes too long, try refreshing or continue to dashboard
+          </p>
         </div>
       </div>
     );
   }
 
-  // Show loading if no user yet (will redirect via useEffect)
-  if (!user) {
+  // Show loading if no user yet (will redirect via useEffect) unless we have a direct session
+  if (!user && !directSession) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -176,6 +233,10 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  // Get current user from either AuthContext or direct session
+  const currentUser = user || directSession?.user;
+  const currentSession = session || directSession;
 
   // Mock data generator function for fallback
   const getMockEnrolledCourses = (): EnrolledCourse[] => {
