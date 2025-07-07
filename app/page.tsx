@@ -502,15 +502,20 @@ export default function Home() {
               <a href="#pricing" className="block py-2 text-gray-700 hover:text-emerald-600 transition-colors">
                 {currentContent.nav.pricing}
               </a>
-              <div className="pt-3 border-t">
-                <Button variant="ghost" size="sm" className="w-full mb-2" onClick={handleAuthClick}>
-                  {currentContent.nav.login}
-                </Button>
-                {!user && (
-                  <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleAuthClick}>
-                    {currentContent.nav.signup}
+              <a href="#about" className="block py-2 text-gray-700 hover:text-emerald-600 transition-colors">
+                {currentContent.nav.about}
+              </a>
+              <div className="pt-4 border-t">
+                <div className="flex flex-col space-y-2">
+                  <Button variant="ghost" size="sm" className="w-full justify-start hover:bg-emerald-50" onClick={handleAuthClick}>
+                    {currentContent.nav.login}
                   </Button>
-                )}
+                  {!user && (
+                    <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleAuthClick}>
+                      {currentContent.nav.signup}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

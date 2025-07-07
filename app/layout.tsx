@@ -104,7 +104,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
-          <div id="root">{children}</div>
+          <main>
+            <div id="root">{children}</div>
+          </main>
           <div id="modal-root"></div>
           <div id="toast-root"></div>
           <Toaster />

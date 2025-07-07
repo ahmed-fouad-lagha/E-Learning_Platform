@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,16 +42,55 @@ interface EnrolledCourse extends CourseCardProps {
 }
 
 export default function DashboardPage() {
-  const { user, profile, session, loading, signOut } = useAuth();
+  const { user, profile, session, loading, signOut, refreshSession } = useAuth();
   const router = useRouter();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
 
   useEffect(() => {
+    console.log('Dashboard - Auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
+    
+    // Only redirect if we're completely done loading and there's no user
     if (!loading && !user) {
+      console.log('Dashboard - No user found after loading complete, redirecting to auth');
       router.push('/auth');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, profile, session]);
+
+  // Handle OAuth completion
+  useEffect(() => {
+    const handleOAuthComplete = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authComplete = urlParams.get('auth');
+      const shouldRefresh = urlParams.get('refresh');
+      
+      if (authComplete === 'complete') {
+        console.log('Dashboard - OAuth completion detected');
+        
+        // Remove the auth parameters from URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('auth');
+        newUrl.searchParams.delete('refresh');
+        window.history.replaceState({}, '', newUrl.toString());
+        
+        // If we're supposed to refresh, do a hard reload to sync session
+        if (shouldRefresh === 'true') {
+          console.log('Dashboard - Performing hard refresh to sync session');
+          window.location.reload();
+          return;
+        }
+        
+        // Otherwise, try to refresh the session
+        if (!user && !loading) {
+          console.log('Dashboard - Refreshing session...');
+          await new Promise(resolve => setTimeout(resolve, 200));
+          await refreshSession();
+        }
+      }
+    };
+
+    handleOAuthComplete();
+  }, [user, loading, refreshSession]);
 
   // Fetch enrolled courses
   useEffect(() => {
@@ -102,6 +142,30 @@ export default function DashboardPage() {
     
     fetchEnrolledCourses();
   }, [user, session]);
+
+  // Show loading state while auth is being determined
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading if no user yet (will redirect via useEffect)
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Mock data generator function for fallback
   const getMockEnrolledCourses = (): EnrolledCourse[] => {

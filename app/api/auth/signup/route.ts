@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const { data: existingUser } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('email')
       .eq('email', validatedData.email)
       .single()
@@ -69,22 +69,22 @@ export async function POST(request: NextRequest) {
 
     // Create user profile
     const profileData = {
-      user_id: authData.user.id,
+      id: authData.user.id,
       email: validatedData.email,
-      first_name: validatedData.firstName,
-      last_name: validatedData.lastName,
-      role: validatedData.role,
-      grade_level: validatedData.grade,
+      name: `${validatedData.firstName} ${validatedData.lastName}`,
+      role: validatedData.role.toUpperCase(),
+      grade: validatedData.grade,
       wilaya: validatedData.wilaya,
-      school_name: validatedData.school,
+      school: validatedData.school,
       student_id: studentId,
+      parent_phone: validatedData.parentPhone,
+      parent_email: validatedData.parentEmail,
       is_verified: false,
-      learning_streak: 0,
-      total_study_time: 0
+      is_active: true
     }
 
     const { error: profileError } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .insert(profileData)
 
     if (profileError) {

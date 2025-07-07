@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
 
     // Get user profile
     const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
-      .eq('user_id', authData.user.id)
+      .eq('id', authData.user.id)
       .single()
 
     if (profileError || !profile) {
@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
 
     // Update last login and activity
     await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
-        last_activity: new Date().toISOString(),
+        last_active: new Date().toISOString(),
         login_attempts: 0 // Reset failed attempts on successful login
       })
-      .eq('user_id', authData.user.id)
+      .eq('id', authData.user.id)
 
     // Create session record
     const deviceInfo = request.headers.get('user-agent') || 'Unknown device'
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
           
           // Get current login attempts
           const { data: currentProfile } = await supabase
-            .from('user_profiles')
+            .from('profiles')
             .select('login_attempts')
             .eq('email', body.email)
             .single()
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           const shouldLock = newAttempts >= 5
           
           await supabase
-            .from('user_profiles')
+            .from('profiles')
             .update({
               login_attempts: newAttempts,
               ...(shouldLock && {
@@ -192,10 +192,10 @@ async function updateLearningStreak(userId: string) {
   // If last activity was today, keep the current streak
 
   await supabase
-    .from('user_profiles')
+    .from('profiles')
     .update({
-      learning_streak: newStreak,
-      last_activity: now.toISOString()
+      current_streak: newStreak,
+      last_active: now.toISOString()
     })
-    .eq('user_id', userId)
+    .eq('id', userId)
 }

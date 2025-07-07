@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Check if Supabase is properly configured
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,22 +15,10 @@ const isSupabaseConfigured = Boolean(
 const defaultUrl = 'https://dummy.supabase.co';
 const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1bW15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTI4MDAsImV4cCI6MTk2MDc2ODgwMH0.dummy';
 
-export const supabase = createClient(
+// Create browser client for client-side operations
+export const supabase = createBrowserClient(
   isSupabaseConfigured ? supabaseUrl! : defaultUrl,
-  isSupabaseConfigured ? supabaseAnonKey! : defaultKey,
-  {
-    auth: {
-      autoRefreshToken: isSupabaseConfigured,
-      persistSession: isSupabaseConfigured,
-      detectSessionInUrl: false, // Disable URL session detection to prevent conflicts
-      flowType: 'pkce',
-      storage: isSupabaseConfigured ? undefined : {
-        getItem: (key: string) => null,
-        setItem: (key: string, value: string) => {},
-        removeItem: (key: string) => {},
-      },
-    }
-  }
+  isSupabaseConfigured ? supabaseAnonKey! : defaultKey
 );
 
 // Export configuration status
@@ -54,10 +42,9 @@ export interface Database {
           parent_phone?: string;
           date_of_birth?: string;
           subjects?: string;
-          experience?: number;
-          qualification?: string;
+          bio?: string;
           is_verified: boolean;
-          is_active: boolean;
+          verification_code?: string;
           last_login?: string;
           created_at: string;
           updated_at: string;
@@ -75,10 +62,9 @@ export interface Database {
           parent_phone?: string;
           date_of_birth?: string;
           subjects?: string;
-          experience?: number;
-          qualification?: string;
+          bio?: string;
           is_verified?: boolean;
-          is_active?: boolean;
+          verification_code?: string;
           last_login?: string;
           created_at?: string;
           updated_at?: string;
@@ -96,10 +82,9 @@ export interface Database {
           parent_phone?: string;
           date_of_birth?: string;
           subjects?: string;
-          experience?: number;
-          qualification?: string;
+          bio?: string;
           is_verified?: boolean;
-          is_active?: boolean;
+          verification_code?: string;
           last_login?: string;
           created_at?: string;
           updated_at?: string;
@@ -110,5 +95,3 @@ export interface Database {
 }
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];

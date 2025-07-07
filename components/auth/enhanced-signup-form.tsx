@@ -63,15 +63,30 @@ export function EnhancedSignupForm({ redirectTo = '/dashboard' }: SignupFormProp
 
   // Social login handler
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    setIsLoading(true)
-    setError('')
-
     try {
-      // For now, we'll redirect to the social login API endpoint
-      window.location.href = `/api/auth/social?provider=${provider}&action=signup&redirect=${encodeURIComponent(redirectTo)}`
+      setIsLoading(true)
+      setError('')
+
+      const response = await fetch('/api/auth/social', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ provider })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.url) {
+        // Redirect to Google OAuth
+        window.location.href = data.url
+      } else {
+        setError(data.error || 'Social login failed')
+      }
     } catch (error) {
       setError('خطأ في تسجيل الدخول عبر ' + (provider === 'google' ? 'Google' : 'Facebook'))
       console.error('Social login error:', error)
+    } finally {
       setIsLoading(false)
     }
   }
