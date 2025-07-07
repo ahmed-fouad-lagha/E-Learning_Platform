@@ -73,24 +73,27 @@ export default function DashboardPage() {
         newUrl.searchParams.delete('refresh');
         window.history.replaceState({}, '', newUrl.toString());
         
-        // If we're supposed to refresh, do a hard reload to sync session
-        if (shouldRefresh === 'true') {
-          console.log('Dashboard - Performing hard refresh to sync session');
-          window.location.reload();
-          return;
-        }
-        
-        // Otherwise, try to refresh the session
-        if (!user && !loading) {
-          console.log('Dashboard - Refreshing session...');
-          await new Promise(resolve => setTimeout(resolve, 200));
-          await refreshSession();
-        }
+        // Always do a hard reload to sync session after OAuth
+        console.log('Dashboard - Performing hard refresh to sync session');
+        window.location.reload();
+        return;
       }
     };
 
     handleOAuthComplete();
-  }, [user, loading, refreshSession]);
+  }, []); // Remove dependencies to prevent re-running
+
+  // Add a timeout to force refresh if stuck in loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.log('Dashboard - Loading timeout, attempting session refresh');
+        refreshSession();
+      }, 3000); // Wait 3 seconds, then try to refresh
+
+      return () => clearTimeout(timeout);
+    }
+  }, [loading, refreshSession]);
 
   // Fetch enrolled courses
   useEffect(() => {
@@ -150,6 +153,13 @@ export default function DashboardPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Refresh Page
+          </Button>
         </div>
       </div>
     );
