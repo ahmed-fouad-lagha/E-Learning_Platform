@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-export default function AuthCodeErrorPage() {
+function AuthCodeErrorContent() {
   const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
@@ -83,5 +83,13 @@ export default function AuthCodeErrorPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AuthCodeErrorPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthCodeErrorContent />
+    </Suspense>
   )
 }
