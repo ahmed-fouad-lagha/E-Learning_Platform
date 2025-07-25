@@ -67,10 +67,10 @@ function AuthPageContent() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading.auth && user) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [user, loading.auth, router]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -131,12 +131,38 @@ function AuthPageContent() {
     }
   };
 
-  if (loading) {
+  if (loading.auth) {
+    console.log('Auth page - Loading state is active:', loading);
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show configuration error if Supabase is not configured
+  if (!isConfigured) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Configuration Error</h2>
+            <p className="text-gray-600 mb-4">
+              Authentication service is not properly configured. Please set up your Supabase environment variables.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded p-4 text-left mb-4">
+              <p className="text-sm text-amber-800 font-medium mb-2">For developers:</p>
+              <ol className="list-decimal list-inside text-sm text-amber-700 space-y-1">
+                <li>Create a <code className="bg-amber-100 px-1 rounded">.env.local</code> file in the project root</li>
+                <li>Add your Supabase URL and anon key (see .env.example)</li>
+                <li>Restart the development server</li>
+              </ol>
+            </div>
+          </div>
         </div>
       </div>
     );

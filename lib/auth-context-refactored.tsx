@@ -157,6 +157,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       return { data: result as T, error: null };
     } catch (error: any) {
+      // Special handling for network-related errors
+      if (error.message?.includes('Failed to fetch') || error.code === 'NETWORK_ERROR') {
+        const networkError = {
+          name: 'NetworkError',
+          message: 'Network connection error. Please check your internet connection and try again.'
+        };
+        console.error('Network error during auth operation:', error);
+        handleApiError(networkError, context);
+        return { data: null, error: networkError as AuthError };
+      }
+
       handleApiError(error, context);
       return { data: null, error };
     } finally {
@@ -189,8 +200,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [handleApiError]);
 
   useEffect(() => {
+    console.log('Supabase configuration status:', { isConfigured, url: process.env.NEXT_PUBLIC_SUPABASE_URL });
+
     if (!isConfigured) {
+      console.warn('Supabase is not configured correctly. Using dummy client.');
       dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: false } });
+      dispatch({ type: 'SET_ERROR', payload: { key: 'auth', message: 'Authentication service is not configured' } });
       return;
     }
 
