@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
+import { useRequireAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CourseCardProps } from '@/components/courses/course-card';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -37,17 +38,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-interface EnrolledCourse {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail?: string | null;
-  price?: number;
-  duration?: number;
-  level?: string;
-  instructor?: string;
-  category?: string;
-  status?: string;
+interface EnrolledCourse extends CourseCardProps {
   progress: number;
   lastAccessedAt: string;
   completedLessons: number;
@@ -61,7 +52,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user, profile, loading, error, signOut, refreshSession } = useAuth();
+  const { user, profile, loading, error, isAuthenticated, requireAuth, signOut, refreshSession, clearError } = useRequireAuth();
   const router = useRouter();
   
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
@@ -74,25 +65,12 @@ export default function DashboardPage() {
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
 
-  // Redirect to auth if not authenticated after loading is complete
+  // Redirect to auth if not authenticated
   useEffect(() => {
-    if (!loading.auth && !user) {
-      console.log('Dashboard - Redirecting to auth (no user found)');
+    if (requireAuth) {
       router.push('/auth');
     }
-  }, [loading.auth, user, router]);
-
-  // Add timeout for loading state
-  useEffect(() => {
-    if (loading.auth) {
-      const timeout = setTimeout(() => {
-        console.log('Dashboard - Loading timeout, redirecting to debug');
-        router.push('/dashboard/debug');
-      }, 10000); // 10 second timeout
-
-      return () => clearTimeout(timeout);
-    }
-  }, [loading.auth, router]);
+  }, [requireAuth, router]);
 
   // Handle OAuth completion flow
   useEffect(() => {
@@ -120,50 +98,29 @@ export default function DashboardPage() {
 
     const fetchDashboardData = async () => {
       try {
-        console.log('Dashboard - Starting data fetch for user:', user.id);
         setIsLoadingCourses(true);
         setCoursesError(null);
 
-        // Add a timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 10000)
-        );
-
-        // Fetch user enrollments with timeout
-        const enrollmentsPromise = supabase
-          .from('course_enrollments')
+        // Fetch user enrollments
+        const { data: enrollments, error: enrollmentsError } = await supabase
+          .from('enrollments')
           .select(`
-            id,
-            progress,
-            enrolled_at,
-            courses!inner (
+            *,
+            courses (
               id,
               title,
-              title_ar,
               description,
-              description_ar,
-              thumbnail,
-              is_free,
-              difficulty,
-              estimated_hours,
-              subject,
-              grade,
-              is_published
+              thumbnail_url,
+              price,
+              duration,
+              level,
+              instructor_name,
+              category,
+              status
             )
           `)
           .eq('user_id', user.id)
-          .eq('courses.is_published', true);
-
-        console.log('Dashboard - Executing enrollments query...');
-        const { data: enrollments, error: enrollmentsError } = await Promise.race([
-          enrollmentsPromise,
-          timeoutPromise
-        ]) as any;
-
-        console.log('Dashboard - Query completed:', { 
-          enrollmentsCount: enrollments?.length || 0, 
-          hasError: !!enrollmentsError 
-        });
+          .eq('status', 'active');
 
         if (enrollmentsError) {
           throw enrollmentsError;
@@ -171,24 +128,23 @@ export default function DashboardPage() {
 
         // Transform enrollments to course format
         const coursesData: EnrolledCourse[] = (enrollments || [])
-          .filter((enrollment: any) => enrollment.courses)
-          .map((enrollment: any) => ({
+          .filter(enrollment => enrollment.courses)
+          .map(enrollment => ({
             id: enrollment.courses.id,
-            title: enrollment.courses.title_ar || enrollment.courses.title,
-            description: enrollment.courses.description_ar || enrollment.courses.description,
+            title: enrollment.courses.title || '',
+            titleAr: enrollment.courses.title_ar || enrollment.courses.title || '',
             thumbnail: enrollment.courses.thumbnail,
-            price: 0, // Free for now, will be updated when pricing is implemented
-            duration: enrollment.courses.estimated_hours,
-            level: enrollment.courses.difficulty,
-            instructor: 'معلم المنصة', // Default instructor name
-            category: enrollment.courses.subject,
-            status: enrollment.courses.is_published ? 'published' : 'draft',
+            subject: enrollment.courses.subject || 'GENERAL',
+            grade: enrollment.courses.grade || 'متنوع',
+            isFree: enrollment.courses.is_free || true,
+            enrollmentCount: enrollment.courses.enrollment_count || 0,
+            totalLessons: enrollment.courses.total_lessons || 0,
+            estimatedHours: enrollment.courses.estimated_hours || 0,
             progress: enrollment.progress || 0,
-            lastAccessedAt: enrollment.enrolled_at,
-            completedLessons: Math.floor((enrollment.progress || 0) / 10), // Estimate based on progress
+            lastAccessedAt: enrollment.last_accessed_at || enrollment.created_at,
+            completedLessons: enrollment.completed_lessons || 0,
           }));
 
-        console.log('Dashboard - Courses data processed:', coursesData.length);
         setEnrolledCourses(coursesData);
 
         // Calculate stats
@@ -205,31 +161,9 @@ export default function DashboardPage() {
           achievementCount: completedCourses * 2 + Math.floor(totalWatchTime / 60), // Simple achievement calculation
         });
 
-        console.log('Dashboard - Stats calculated:', {
-          totalCourses,
-          completedCourses,
-          totalWatchTime: Math.round(totalWatchTime)
-        });
-
       } catch (error: any) {
-        console.error('Dashboard - Error fetching data:', {
-          error: error,
-          message: error?.message || 'Unknown error',
-          code: error?.code,
-          details: error?.details,
-          stack: error?.stack
-        });
-        
-        let errorMessage = 'Failed to load dashboard data';
-        if (error?.message === 'Request timeout') {
-          errorMessage = 'Dashboard loading timed out. Please try refreshing the page.';
-        } else if (error?.code === '42P01') {
-          errorMessage = 'Database tables not found. Please set up your database first.';
-        } else if (error?.message) {
-          errorMessage = error.message;
-        }
-        
-        setCoursesError(errorMessage);
+        console.error('Dashboard - Error fetching data:', error);
+        setCoursesError(error.message || 'Failed to load dashboard data');
       } finally {
         setIsLoadingCourses(false);
       }
@@ -249,27 +183,19 @@ export default function DashboardPage() {
   };
 
   // Show loading screen
-  if (loading.auth) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 mb-4">Loading dashboard...</p>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">Taking too long?</p>
-            <Link href="/dashboard/debug">
-              <Button variant="outline" size="sm">
-                Debug Dashboard
-              </Button>
-            </Link>
-          </div>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   // Show error state
-  if (error.auth) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -280,8 +206,11 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">{error.auth}</p>
+            <p className="text-gray-600 mb-4">{error}</p>
             <div className="flex gap-2">
+              <Button onClick={clearError} variant="outline" className="flex-1">
+                Dismiss
+              </Button>
               <Button onClick={refreshSession} className="flex-1">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
@@ -294,31 +223,12 @@ export default function DashboardPage() {
   }
 
   // Don't render content if user is not authenticated (will redirect)
-  if (!user) {
+  if (!isAuthenticated) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
-      {/* Profile Error Alert */}
-      {error.profile && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Profile Error: {error.profile}
-              </p>
-              <p className="text-xs text-yellow-600 mt-1">
-                Some features may be limited. Try refreshing or contact support if this persists.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-      
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -430,18 +340,7 @@ export default function DashboardPage() {
             {coursesError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {coursesError}
-                  {coursesError.includes('Database tables not found') && (
-                    <div className="mt-2">
-                      <Link href="/admin/database-setup">
-                        <Button variant="outline" size="sm">
-                          Set Up Database
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </AlertDescription>
+                <AlertDescription>{coursesError}</AlertDescription>
               </Alert>
             )}
 

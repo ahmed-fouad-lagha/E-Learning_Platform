@@ -119,9 +119,7 @@ export async function GET(request: NextRequest) {
             avatar_url: avatarUrl,
             role: 'STUDENT',
             is_verified: true,
-            subscription: 'FREE',
-            total_points: 0,
-            streak: 0,
+            last_login: new Date().toISOString(),
           });
 
         if (profileError) {
@@ -131,11 +129,11 @@ export async function GET(request: NextRequest) {
           console.log('OAuth callback - Profile created successfully');
         }
       } else {
-        // Update last activity for existing user
-        console.log('OAuth callback - Updating last activity for existing user');
+        // Update last login for existing user
+        console.log('OAuth callback - Updating last login for existing user');
         await supabase
           .from('profiles')
-          .update({ last_active: new Date().toISOString() })
+          .update({ last_login: new Date().toISOString() })
           .eq('id', data.user.id);
       }
     } catch (profileError) {

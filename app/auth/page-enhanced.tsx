@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +24,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-// Component that uses search params - needs to be wrapped in Suspense
-function AuthPageContent() {
+export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { 
@@ -496,26 +495,5 @@ function AuthPageContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-// Loading component for Suspense fallback
-function AuthPageLoading() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading authentication...</p>
-      </div>
-    </div>
-  );
-}
-
-// Main export component with Suspense wrapper
-export default function AuthPage() {
-  return (
-    <Suspense fallback={<AuthPageLoading />}>
-      <AuthPageContent />
-    </Suspense>
   );
 }

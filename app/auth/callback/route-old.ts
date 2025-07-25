@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth?error=no_code`);
   }
 
+  // This is the crucial part - we need to handle the response correctly
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -78,8 +79,17 @@ export async function GET(request: NextRequest) {
     );
 
     console.log('OAuth callback - Exchanging code for session');
+    console.log('OAuth callback - Available cookies before exchange:', cookieStore.getAll().map(c => c.name));
     
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    console.log('OAuth callback - Available cookies after exchange:', cookieStore.getAll().map(c => c.name));
+    console.log('OAuth callback - Session data:', {
+      hasSession: !!data.session,
+      hasUser: !!data.user,
+      userEmail: data.user?.email,
+      sessionExpiry: data.session?.expires_at
+    });
     
     if (error) {
       console.error('OAuth callback - Exchange failed:', error.message);
@@ -93,65 +103,17 @@ export async function GET(request: NextRequest) {
 
     console.log('OAuth callback - Session established successfully');
     console.log('OAuth callback - User:', data.user.email);
-
-    // Check if profile exists, create if not
-    try {
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', data.user.id)
-        .single();
-
-      if (!existingProfile) {
-        console.log('OAuth callback - Creating profile for new user');
-        
-        // Extract user information from metadata
-        const userMetadata = data.user.user_metadata;
-        const name = userMetadata?.full_name || userMetadata?.name || data.user.email?.split('@')[0] || '';
-        const avatarUrl = userMetadata?.avatar_url || userMetadata?.picture;
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            name: name,
-            avatar_url: avatarUrl,
-            role: 'STUDENT',
-            is_verified: true,
-            subscription: 'FREE',
-            total_points: 0,
-            streak: 0,
-          });
-
-        if (profileError) {
-          console.error('OAuth callback - Profile creation failed:', profileError);
-          // Don't fail the OAuth flow, just log the error
-        } else {
-          console.log('OAuth callback - Profile created successfully');
-        }
-      } else {
-        // Update last activity for existing user
-        console.log('OAuth callback - Updating last activity for existing user');
-        await supabase
-          .from('profiles')
-          .update({ last_active: new Date().toISOString() })
-          .eq('id', data.user.id);
-      }
-    } catch (profileError) {
-      console.error('OAuth callback - Profile handling error:', profileError);
-      // Don't fail the OAuth flow
-    }
-
     console.log('OAuth callback - Redirecting to:', redirectTo);
 
-    // Create the final redirect response with success indicators
+    // Add a parameter to indicate we just completed OAuth and force a refresh
     const redirectUrl = new URL(redirectTo, origin);
     redirectUrl.searchParams.set('auth', 'complete');
+    redirectUrl.searchParams.set('refresh', 'true');
 
+    // Create the final redirect response
     response = NextResponse.redirect(redirectUrl.toString());
     
-    // Set cache control headers to prevent caching
+    // Set additional security headers
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');

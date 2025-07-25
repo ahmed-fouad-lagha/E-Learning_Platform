@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo "🔍 Debugging Production OAuth Issue"
+echo "=================================="
+echo ""
+
+echo "❌ Current Issue:"
+echo "- OAuth redirects to: https://www.bacalgerie.me/?code=..."
+echo "- Should redirect to: https://www.bacalgerie.me/auth/callback?code=..."
+echo "- Dashboard shows loading screen (user not authenticated)"
+echo ""
+
+echo "🔧 Possible Causes:"
+echo "1. Supabase Redirect URLs incorrect"
+echo "2. Google OAuth configuration pointing to wrong URL"
+echo "3. Site URL vs Redirect URL mismatch"
+echo ""
+
+echo "📝 Check These Settings:"
+echo ""
+echo "🔸 Supabase Dashboard:"
+echo "   Site URL: https://bacalgerie.me"
+echo "   Redirect URLs should include:"
+echo "   - https://bacalgerie.me/auth/callback"
+echo "   - http://localhost:3000/auth/callback"
+echo ""
+echo "🔸 Google Cloud Console:"
+echo "   Check if authorized redirect URIs include:"
+echo "   - https://tgmnzmmfjkwougqtgwif.supabase.co/auth/v1/callback"
+echo "   - https://bacalgerie.me/auth/callback"
+echo ""
+
+echo "🚀 Quick Fix Steps:"
+echo "1. Double-check Supabase redirect URLs"
+echo "2. Verify Google OAuth configuration"
+echo "3. Test on production after changes"

@@ -1,0 +1,752 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase-client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CourseCardProps } from '@/components/courses/course-card';
+import Link from 'next/link';
+import Image from 'next/image';
+
+import { 
+  BookOpen, 
+  Trophy, 
+  Clock, 
+  TrendingUp, 
+  Users, 
+  Calendar,
+  Bell,
+  Settings,
+  LogOut,
+  GraduationCap,
+  Target,
+  Award,
+  BarChart3,
+  Play,
+  CheckCircle,
+  LayoutDashboard,
+  Compass,
+  Lock
+} from 'lucide-react';
+
+interface EnrolledCourse extends CourseCardProps {
+  progress: number;
+  lastAccessedAt: string;
+  completedLessons: number;
+}
+
+export default function DashboardPage() {
+  const { user, profile, session, loading, signOut, refreshSession } = useAuth();
+  const router = useRouter();
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [forceShowDashboard, setForceShowDashboard] = useState(false);
+  const [directSession, setDirectSession] = useState<any>(null);
+
+  // Direct session check bypass
+  useEffect(() => {
+    const checkDirectSession = async () => {
+      try {
+        const { data: { session: directSess } } = await supabase.auth.getSession();
+        if (directSess) {
+          console.log('Dashboard - Direct session found:', directSess.user?.email);
+          setDirectSession(directSess);
+          setForceShowDashboard(true);
+        }
+      } catch (error) {
+        console.error('Dashboard - Direct session check failed:', error);
+      }
+    };
+
+    if (loading && !user) {
+      checkDirectSession();
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    console.log('Dashboard - Auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
+    
+    // Only redirect if we're completely done loading and there's no user
+    if (!loading && !user) {
+      console.log('Dashboard - No user found after loading complete, redirecting to auth');
+      router.push('/auth');
+    }
+  }, [user, loading, router, profile, session]);
+
+  // Handle OAuth completion
+  useEffect(() => {
+    const handleOAuthComplete = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authComplete = urlParams.get('auth');
+      const shouldRefresh = urlParams.get('refresh');
+      
+      if (authComplete === 'complete') {
+        console.log('Dashboard - OAuth completion detected');
+        
+        // Remove the auth parameters from URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('auth');
+        newUrl.searchParams.delete('refresh');
+        window.history.replaceState({}, '', newUrl.toString());
+        
+        // Always do a hard reload to sync session after OAuth
+        console.log('Dashboard - Performing hard refresh to sync session');
+        window.location.reload();
+        return;
+      }
+    };
+
+    handleOAuthComplete();
+  }, []); // Remove dependencies to prevent re-running
+
+  // Add a timeout to force refresh if stuck in loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.log('Dashboard - Loading timeout, attempting session refresh');
+        refreshSession();
+      }, 1500); // Reduced to 1.5 seconds
+
+      // Also try to refresh immediately if we've been loading for a while
+      const immediateTimeout = setTimeout(() => {
+        console.log('Dashboard - Immediate session refresh attempt');
+        refreshSession();
+      }, 500);
+
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(immediateTimeout);
+      };
+    }
+  }, [loading, refreshSession]);
+
+  // Force refresh session on mount if we detect we should have a session
+  useEffect(() => {
+    const checkSession = async () => {
+      // Check if we have session cookies but no user in context
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !user && !loading) {
+        console.log('Dashboard - Found session but no user, forcing refresh');
+        await refreshSession();
+      }
+    };
+
+    checkSession();
+  }, [user, loading, refreshSession]);
+
+  // Fetch enrolled courses
+  useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingCourses(true);
+        
+        // If no session/token available, fall back to mock data
+        if (!session?.access_token) {
+          console.warn('No session token available, using mock data');
+          setEnrolledCourses(getMockEnrolledCourses());
+          setIsLoadingCourses(false);
+          return;
+        }
+        
+        // Replace mock data with real API call
+        const response = await fetch('/api/user/enrolled-courses', {
+          headers: {
+            'authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setEnrolledCourses(data.data);
+          } else {
+            console.error('Unexpected API response format:', data);
+            // Fall back to mock data if the API call fails
+            setEnrolledCourses(getMockEnrolledCourses());
+          }
+        } else {
+          console.warn('Failed to fetch enrolled courses:', response.status, response.statusText);
+          console.warn('Using mock data as fallback');
+          // Fall back to mock data if the API call fails
+          setEnrolledCourses(getMockEnrolledCourses());
+        }
+      } catch (err) {
+        console.warn('Error fetching enrolled courses:', err);
+        console.warn('Using mock data as fallback');
+        // Fall back to mock data if the API call fails
+        setEnrolledCourses(getMockEnrolledCourses());
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+    
+    fetchEnrolledCourses();
+  }, [user, session]);
+
+  // Show loading state while auth is being determined
+  if (loading && !forceShowDashboard) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="mt-4 space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()} 
+              size="sm"
+            >
+              Refresh Page
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setForceShowDashboard(true)} 
+              size="sm"
+            >
+              Continue
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            If loading takes too long, try refreshing or continue to dashboard
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading if no user yet (will redirect via useEffect) unless we have a direct session
+  if (!user && !directSession) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get current user from either AuthContext or direct session
+  const currentUser = user || directSession?.user;
+  const currentSession = session || directSession;
+
+  // Mock data generator function for fallback
+  const getMockEnrolledCourses = (): EnrolledCourse[] => {
+    return [
+      {
+        id: 'course1',
+        title: 'Mathematics for BAC Science',
+        titleAr: 'الرياضيات للبكالوريا شعبة علوم',
+        thumbnail: '/images/math-course.jpg',
+        subject: 'MATHEMATICS',
+        grade: 'TERMINALE_AS',
+        isFree: false,
+        enrollmentCount: 243,
+        totalLessons: 24,
+        estimatedHours: 48,
+        progress: 75,
+        lastAccessedAt: '2023-10-15T10:30:00Z',
+        completedLessons: 18
+      },
+      {
+        id: 'course2',
+        title: 'Physics for BAC Science',
+        titleAr: 'الفيزياء للبكالوريا شعبة علوم',
+        thumbnail: '/images/physics-course.jpg',
+        subject: 'PHYSICS',
+        grade: 'TERMINALE_AS',
+        isFree: true,
+        enrollmentCount: 189,
+        totalLessons: 18,
+        estimatedHours: 36,
+        progress: 33,
+        lastAccessedAt: '2023-10-17T14:15:00Z',
+        completedLessons: 6
+      },
+      {
+        id: 'course3',
+        title: 'Arabic Literature',
+        titleAr: 'الأدب العربي',
+        thumbnail: '/images/arabic-course.jpg',
+        subject: 'ARABIC_LITERATURE',
+        grade: 'TERMINALE_AL',
+        isFree: false,
+        enrollmentCount: 120,
+        totalLessons: 15,
+        estimatedHours: 30,
+        progress: 15,
+        lastAccessedAt: '2023-10-18T09:45:00Z',
+        completedLessons: 2
+      }
+    ];
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+  
+  // Calculate statistics
+  const totalProgress = enrolledCourses.reduce((acc, course) => acc + course.progress, 0) / 
+    (enrolledCourses.length || 1);
+  const totalCompletedLessons = enrolledCourses.reduce((acc, course) => acc + course.completedLessons, 0);
+  const totalLessons = enrolledCourses.reduce((acc, course) => acc + course.totalLessons, 0);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Dashboard Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div className="flex items-center gap-4 mb-4 md:mb-0">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={profile.avatar_url || ''} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+              {profile.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold">مرحبًا، {profile.name || 'طالب'}</h1>
+            <p className="text-muted-foreground">{user.email}</p>
+            {profile.grade && (
+              <Badge variant="outline" className="mt-1">
+                {profile.grade}
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex gap-1">
+            <Bell size={16} />
+            <span className="hidden md:inline">الإشعارات</span>
+          </Button>
+          <Button variant="outline" size="sm" className="flex gap-1" onClick={() => router.push('/profile')}>
+            <Settings size={16} />
+            <span className="hidden md:inline">الإعدادات</span>
+          </Button>
+          <Button variant="outline" size="sm" className="flex gap-1" onClick={handleSignOut}>
+            <LogOut size={16} />
+            <span className="hidden md:inline">تسجيل الخروج</span>
+          </Button>
+        </div>
+      </div>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">التقدم العام</p>
+                <p className="text-2xl font-bold">{Math.round(totalProgress)}%</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+            <Progress value={totalProgress} className="h-2 mt-4" />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">الدروس المكتملة</p>
+                <p className="text-2xl font-bold">{totalCompletedLessons} / {totalLessons}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+            <Progress 
+              value={(totalCompletedLessons / totalLessons) * 100} 
+              className="h-2 mt-4" 
+            />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">الدورات المسجلة</p>
+                <p className="text-2xl font-bold">{enrolledCourses.length}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">المدة الإجمالية</p>
+                <p className="text-2xl font-bold">
+                  {enrolledCourses.reduce((acc, course) => acc + course.estimatedHours, 0)} ساعة
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Main Dashboard Content */}
+      <Tabs defaultValue="my-courses">
+        <TabsList className="mb-8">
+          <TabsTrigger value="my-courses" className="flex items-center gap-2">
+            <BookOpen size={16} />
+            دوراتي
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="flex items-center gap-2">
+            <BarChart3 size={16} />
+            تقدمي
+          </TabsTrigger>
+          <TabsTrigger value="discover" className="flex items-center gap-2">
+            <Compass size={16} />
+            استكشاف
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="my-courses">
+          <div className="grid grid-cols-1 gap-8">
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <BookOpen size={20} />
+                  دوراتي المسجلة
+                </h2>
+                
+                <Button variant="outline" size="sm" onClick={() => router.push('/courses')}>
+                  استكشاف المزيد
+                </Button>
+              </div>
+              
+              {isLoadingCourses ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="p-0">
+                        <div className="h-40 bg-muted animate-pulse"></div>
+                        <div className="p-4">
+                          <div className="h-5 bg-muted animate-pulse mb-2 w-3/4"></div>
+                          <div className="h-4 bg-muted animate-pulse mb-4 w-1/2"></div>
+                          <div className="h-3 bg-muted animate-pulse mb-2 w-full"></div>
+                          <div className="h-3 bg-muted animate-pulse w-full"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : enrolledCourses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {enrolledCourses.map((course) => (
+                    <Card key={course.id} className="overflow-hidden">
+                      <div className="relative aspect-video">
+                        {course.thumbnail ? (
+                          <Image
+                            src={course.thumbnail}
+                            alt={course.titleAr}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <BookOpen size={40} className="text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <CardContent className="p-4">
+                        <Badge className="mb-2">{course.subject}</Badge>
+                        <h3 className="font-bold text-lg mb-1" dir="rtl">{course.titleAr}</h3>
+                        <p className="text-sm text-muted-foreground mb-3">{course.title}</p>
+                        
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>التقدم</span>
+                          <span className="font-medium">{course.progress}%</span>
+                        </div>
+                        <Progress value={course.progress} className="h-2 mb-4" />
+                        
+                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
+                          <div className="flex items-center gap-1">
+                            <CheckCircle size={14} />
+                            <span>{course.completedLessons}/{course.totalLessons}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock size={14} />
+                            <span>{course.estimatedHours} ساعة</span>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          className="w-full"
+                          onClick={() => router.push(`/courses/${course.id}`)}
+                        >
+                          <Play size={16} className="mr-2" />
+                          متابعة التعلم
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">لم تسجل في أي دورة بعد</h3>
+                    <p className="text-muted-foreground mb-6">
+                      استكشف قائمة الدورات المتاحة وابدأ رحلة التعلم الآن
+                    </p>
+                    <Button onClick={() => router.push('/courses')}>
+                      استعرض الدورات المتاحة
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            
+            {/* Recently Accessed Courses */}
+            {enrolledCourses.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Clock size={20} />
+                  آخر الدورات المستعرضة
+                </h2>
+                
+                <div className="space-y-4">
+                  {enrolledCourses
+                    .sort((a, b) => new Date(b.lastAccessedAt).getTime() - new Date(a.lastAccessedAt).getTime())
+                    .slice(0, 3)
+                    .map((course) => (
+                      <Card key={`recent-${course.id}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-4">
+                            <div className="relative h-16 w-24 flex-shrink-0 rounded-md overflow-hidden">
+                              {course.thumbnail ? (
+                                <Image
+                                  src={course.thumbnail}
+                                  alt={course.titleAr}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                  <BookOpen size={20} className="text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h4 className="font-bold" dir="rtl">{course.titleAr}</h4>
+                              <div className="flex justify-between items-center mt-1">
+                                <div className="text-sm text-muted-foreground">
+                                  آخر تصفح: {new Date(course.lastAccessedAt).toLocaleDateString('ar-DZ')}
+                                </div>
+                                <Progress value={course.progress} className="w-24 h-2" />
+                              </div>
+                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/courses/${course.id}`)}
+                            >
+                              متابعة
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="progress">
+          <div className="grid grid-cols-1 gap-8">
+            {/* Course Progress Charts */}
+            <Card>
+              <CardHeader>
+                <CardTitle>تقدم الدورات</CardTitle>
+                <CardDescription>
+                  عرض تفصيلي لتقدمك في كل دورة مسجلة
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {enrolledCourses.length > 0 ? (
+                  <div className="space-y-6">
+                    {enrolledCourses.map((course) => (
+                      <div key={`progress-${course.id}`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <h4 className="font-medium" dir="rtl">{course.titleAr}</h4>
+                            <p className="text-sm text-muted-foreground">{course.title}</p>
+                          </div>
+                          <span className="font-medium">{course.progress}%</span>
+                        </div>
+                        <Progress value={course.progress} className="h-2 mb-1" />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>اكتمل {course.completedLessons} من أصل {course.totalLessons} درس</span>
+                          <span>المتبقي: {course.totalLessons - course.completedLessons} درس</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <BarChart3 size={48} className="mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      سجل في دورات لتتبع تقدمك التعليمي
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Achievement Badges */}
+            <Card>
+              <CardHeader>
+                <CardTitle>الإنجازات</CardTitle>
+                <CardDescription>
+                  الشارات التي حصلت عليها من خلال تقدمك
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  {/* Sample achievement badges */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Award size={24} />
+                    </div>
+                    <span className="text-sm font-medium">بداية الرحلة</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Trophy size={24} />
+                    </div>
+                    <span className="text-sm font-medium">المتعلم النشيط</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <GraduationCap size={24} />
+                    </div>
+                    <span className="text-sm font-medium">متفوق في الرياضيات</span>
+                  </div>
+                  
+                  {/* Locked badges */}
+                  <div className="flex flex-col items-center text-center opacity-50">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-2">
+                      <Lock size={24} className="text-muted-foreground" />
+                    </div>
+                    <span className="text-sm font-medium">مقفل</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center opacity-50">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-2">
+                      <Lock size={24} className="text-muted-foreground" />
+                    </div>
+                    <span className="text-sm font-medium">مقفل</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="discover">
+          <Card>
+            <CardHeader>
+              <CardTitle>استكشف المزيد من الدورات</CardTitle>
+              <CardDescription>
+                دورات مقترحة بناءً على اهتماماتك ومسارك التعليمي
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Suggested courses */}
+                <Card className="border-dashed">
+                  <CardContent className="p-4">
+                    <Badge variant="outline" className="mb-2">CHEMISTRY</Badge>
+                    <h4 className="font-bold mb-1" dir="rtl">الكيمياء للبكالوريا شعبة علوم</h4>
+                    <p className="text-sm text-muted-foreground mb-4">Chemistry for BAC Science</p>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link href="/courses">
+                        <Compass size={16} className="mr-2" />
+                        استعراض
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-dashed">
+                  <CardContent className="p-4">
+                    <Badge variant="outline" className="mb-2">ENGLISH</Badge>
+                    <h4 className="font-bold mb-1" dir="rtl">اللغة الإنجليزية للبكالوريا</h4>
+                    <p className="text-sm text-muted-foreground mb-4">English for BAC</p>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link href="/courses">
+                        <Compass size={16} className="mr-2" />
+                        استعراض
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-dashed">
+                  <CardContent className="p-4">
+                    <Badge variant="outline" className="mb-2">PHILOSOPHY</Badge>
+                    <h4 className="font-bold mb-1" dir="rtl">الفلسفة لشعبة الآداب</h4>
+                    <p className="text-sm text-muted-foreground mb-4">Philosophy for Literature</p>
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link href="/courses">
+                        <Compass size={16} className="mr-2" />
+                        استعراض
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-6 flex justify-center">
+              <Button onClick={() => router.push('/courses')}>
+                عرض جميع الدورات المتاحة
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
