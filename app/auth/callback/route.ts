@@ -41,7 +41,23 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     console.error('OAuth callback - No authorization code received');
-    return NextResponse.redirect(`${origin}/auth?error=no_code`);
+    return NextResponse.redirect(`${origin}/auth?error=no_code&message=${encodeURIComponent('لم يتم استلام رمز التفويض')}`);
+  }
+
+  // Check if Supabase is configured
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  const isConfigured = Boolean(
+    supabaseUrl && 
+    supabaseUrl !== 'your-supabase-url' && 
+    supabaseAnonKey && 
+    supabaseAnonKey !== 'your-supabase-anon-key'
+  );
+
+  if (!isConfigured) {
+    console.error('OAuth callback - Supabase not configured');
+    return NextResponse.redirect(`${origin}/auth?error=not_configured&message=${encodeURIComponent('خدمة المصادقة غير مكونة')}`);
   }
 
   let response = NextResponse.next({
@@ -53,8 +69,8 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl!,
+      supabaseAnonKey!,
       {
         cookies: {
           getAll() {
@@ -83,12 +99,12 @@ export async function GET(request: NextRequest) {
     
     if (error) {
       console.error('OAuth callback - Exchange failed:', error.message);
-      return NextResponse.redirect(`${origin}/auth?error=exchange_failed&message=${encodeURIComponent(error.message)}`);
+      return NextResponse.redirect(`${origin}/auth?error=exchange_failed&message=${encodeURIComponent('فشل في تبادل الرمز: ' + error.message)}`);
     }
 
     if (!data.session || !data.user) {
       console.error('OAuth callback - No session or user data received');
-      return NextResponse.redirect(`${origin}/auth?error=no_session_data`);
+      return NextResponse.redirect(`${origin}/auth?error=no_session_data&message=${encodeURIComponent('لم يتم استلام بيانات الجلسة')}`);
     }
 
     console.log('OAuth callback - Session established successfully');
@@ -110,23 +126,31 @@ export async function GET(request: NextRequest) {
         const name = userMetadata?.full_name || userMetadata?.name || data.user.email?.split('@')[0] || '';
         const avatarUrl = userMetadata?.avatar_url || userMetadata?.picture;
 
+        const profileData = {
+          id: data.user.id,
+          email: data.user.email!,
+          name: name,
+          avatar_url: avatarUrl,
+          role: 'STUDENT' as const,
+          is_verified: true,
+          subscription: 'FREE' as const,
+          total_points: 0,
+          streak: 0,
+          is_active: true,
+          last_active: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            name: name,
-            avatar_url: avatarUrl,
-            role: 'STUDENT',
-            is_verified: true,
-            subscription: 'FREE',
-            total_points: 0,
-            streak: 0,
-          });
+          .insert(profileData);
 
         if (profileError) {
           console.error('OAuth callback - Profile creation failed:', profileError);
           // Don't fail the OAuth flow, just log the error
+          console.warn('OAuth callback - Continuing without profile creation');
         } else {
           console.log('OAuth callback - Profile created successfully');
         }
@@ -135,19 +159,25 @@ export async function GET(request: NextRequest) {
         console.log('OAuth callback - Updating last activity for existing user');
         await supabase
           .from('profiles')
-          .update({ last_active: new Date().toISOString() })
+          .update({ 
+            last_active: new Date().toISOString(),
+            last_login: new Date().toISOString(),
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', data.user.id);
       }
     } catch (profileError) {
       console.error('OAuth callback - Profile handling error:', profileError);
-      // Don't fail the OAuth flow
+      // Don't fail the OAuth flow, just log the error
+      console.warn('OAuth callback - Continuing without profile handling');
     }
 
     console.log('OAuth callback - Redirecting to:', redirectTo);
 
     // Create the final redirect response with success indicators
     const redirectUrl = new URL(redirectTo, origin);
-    redirectUrl.searchParams.set('auth', 'complete');
+    redirectUrl.searchParams.set('auth', 'success');
 
     response = NextResponse.redirect(redirectUrl.toString());
     
@@ -160,7 +190,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('OAuth callback - Unexpected error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return NextResponse.redirect(`${origin}/auth?error=unexpected_error&message=${encodeURIComponent(errorMessage)}`);
   }
 }

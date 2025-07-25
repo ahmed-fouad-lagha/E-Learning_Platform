@@ -18,6 +18,8 @@ export interface CourseCardProps {
   enrollmentCount: number;
   totalLessons: number;
   estimatedHours: number;
+  level?: string;
+  description?: string;
 }
 
 export function CourseCard({

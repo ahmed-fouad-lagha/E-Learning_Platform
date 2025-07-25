@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, Profile, isConfigured } from './supabase-client';
+import { supabase, Profile, isConfigured } from './supabase';
 import { useToast } from '@/hooks/use-toast';
 
 // --- STATE AND REDUCER ---
@@ -131,14 +131,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const handleApiError = useCallback((error: AuthError | Error | null, context: keyof AuthState['error']) => {
     if (!error) return;
-    const message = error.message || 'An unknown error occurred.';
+    
+    let message = 'An unknown error occurred.';
+    
+    if (error.message) {
+      // Handle common Supabase auth errors with user-friendly messages
+      switch (error.message) {
+        case 'Invalid login credentials':
+          message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+          break;
+        case 'User already registered':
+          message = 'هذا البريد الإلكتروني مسجل بالفعل';
+          break;
+        case 'Email not confirmed':
+          message = 'يرجى تأكيد البريد الإلكتروني أولاً';
+          break;
+        case 'Password should be at least 6 characters':
+          message = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+          break;
+        case 'Unable to validate email address: invalid format':
+          message = 'تنسيق البريد الإلكتروني غير صحيح';
+          break;
+        case 'Signup requires a valid password':
+          message = 'كلمة المرور مطلوبة';
+          break;
+        default:
+          message = error.message;
+      }
+    }
+    
     console.error(`Auth Error (${context}):`, error);
     dispatch({ type: 'SET_ERROR', payload: { key: context, message } });
-    toast({
-      title: `Error: ${context.charAt(0).toUpperCase() + context.slice(1)}`,
-      description: message,
-      variant: 'destructive',
-    });
+    
+    // Only show toast for action errors (not auth state or profile errors)
+    if (context === 'action') {
+      toast({
+        title: 'خطأ في المصادقة',
+        description: message,
+        variant: 'destructive',
+      });
+    }
   }, [toast]);
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
@@ -161,11 +193,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (error) {
-        // Enhanced error logging with full error object
-        console.error(
-          'Auth - Profile fetch error:', 
-          JSON.stringify(error, null, 2) || 'Unknown Supabase error'
-        );
+        console.error('Auth - Profile fetch error:', JSON.stringify(error, null, 2));
         
         // "No rows found" is not a critical error, just means profile doesn't exist yet.
         if (error.code !== 'PGRST116') { 
@@ -189,13 +217,87 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'PROFILE_LOADED', payload: { profile: data } });
       return data;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       console.error('Auth - Unexpected error in fetchProfile:', error);
       handleApiError(error as Error, 'profile');
       dispatch({ type: 'PROFILE_LOADED', payload: { profile: null } });
       return null;
     }
   }, [handleApiError]);
+
+  const createProfileIfNeeded = useCallback(async (user: User): Promise<void> => {
+    if (!user) return;
+    
+    console.log('Auth - Checking if profile exists for user:', user.id);
+    
+    try {
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        console.log('Auth - Creating profile for new user');
+        
+        // Extract user information from metadata
+        const userMetadata = user.user_metadata;
+        const name = userMetadata?.full_name || userMetadata?.name || user.email?.split('@')[0] || '';
+        const avatarUrl = userMetadata?.avatar_url || userMetadata?.picture;
+
+        const profileData = {
+          id: user.id,
+          email: user.email!,
+          name: name,
+          avatar_url: avatarUrl,
+          role: 'STUDENT' as const,
+          is_verified: true,
+          subscription: 'FREE' as const,
+          total_points: 0,
+          streak: 0,
+          is_active: true,
+          last_active: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert(profileData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Auth - Profile creation failed:', error);
+          handleApiError(error, 'profile');
+        } else {
+          console.log('Auth - Profile created successfully:', data);
+          dispatch({ type: 'PROFILE_LOADED', payload: { profile: data } });
+          toast({
+            title: 'مرحباً بك!',
+            description: 'تم إنشاء حسابك بنجاح',
+            variant: 'default',
+          });
+        }
+      } else {
+        // Update last activity for existing user
+        console.log('Auth - Updating last activity for existing user');
+        await supabase
+          .from('profiles')
+          .update({ 
+            last_active: new Date().toISOString(),
+            last_login: new Date().toISOString(),
+            is_active: true
+          })
+          .eq('id', user.id);
+        
+        // Fetch the updated profile
+        await fetchProfile(user.id);
+      }
+    } catch (error) {
+      console.error('Auth - Profile handling error:', error);
+      handleApiError(error as Error, 'profile');
+    }
+  }, [handleApiError, fetchProfile, toast]);
 
   useEffect(() => {
     if (!isConfigured) {
@@ -206,80 +308,160 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Auth - Initial session check:', !!session);
       dispatch({ type: 'AUTH_STATE_CHANGE', payload: { session, user: session?.user ?? null } });
       if (session?.user) {
-        fetchProfile(session.user.id);
+        createProfileIfNeeded(session.user);
       }
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth - State change event:', event, !!session);
         dispatch({ type: 'AUTH_STATE_CHANGE', payload: { session, user: session?.user ?? null } });
+        
         if (event === 'SIGNED_IN' && session?.user) {
-          await fetchProfile(session.user.id);
+          await createProfileIfNeeded(session.user);
         }
+        
         if (event === 'SIGNED_OUT') {
-            dispatch({ type: 'CLEAR_STATE' });
+          dispatch({ type: 'CLEAR_STATE' });
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [createProfileIfNeeded]);
 
-  const performAuthAction = useCallback(async <T,>(
-    action: () => Promise<{ data: T; error: AuthError | null }>
-  ): Promise<{ data: T; error: AuthError | null }> => {
+  const signUp = useCallback(async (email: string, password: string, userData?: any) => {
+    console.log('Auth - Starting sign up for:', email);
+    
     if (!isConfigured) {
-        const error = { name: 'ConfigurationError', message: 'Supabase not configured' } as AuthError;
-        handleApiError(error, 'action');
-        return { data: null as T, error };
+      const error = { name: 'ConfigurationError', message: 'Supabase not configured' } as AuthError;
+      handleApiError(error, 'action');
+      return { data: null, error };
     }
     
     dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: true } });
     dispatch({ type: 'SET_ERROR', payload: { key: 'action', message: null } });
     
     try {
-      const { data, error } = await action();
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { 
+          data: userData,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (!error && data.user && !data.session) {
+        // Email confirmation required
+        toast({
+          title: 'تأكيد البريد الإلكتروني',
+          description: 'تم إرسال رابط التأكيد إلى بريدك الإلكتروني',
+          variant: 'default',
+        });
+      }
+      
       if (error) {
         handleApiError(error, 'action');
       }
+      
       return { data, error };
     } catch (error) {
       handleApiError(error as AuthError, 'action');
-      return { data: null as T, error: error as AuthError };
+      return { data: null, error: error as AuthError };
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: false } });
+    }
+  }, [handleApiError, toast]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    console.log('Auth - Starting sign in for:', email);
+    
+    if (!isConfigured) {
+      const error = { name: 'ConfigurationError', message: 'Supabase not configured' } as AuthError;
+      handleApiError(error, 'action');
+      return { data: null, error };
+    }
+    
+    dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: true } });
+    dispatch({ type: 'SET_ERROR', payload: { key: 'action', message: null } });
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        handleApiError(error, 'action');
+      }
+      
+      return { data, error };
+    } catch (error) {
+      handleApiError(error as AuthError, 'action');
+      return { data: null, error: error as AuthError };
     } finally {
       dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: false } });
     }
   }, [handleApiError]);
 
-  const signUp = useCallback(async (email: string, password: string, userData?: any) => {
-    return performAuthAction(() => supabase.auth.signUp({ email, password, options: { data: userData } }));
-  }, [performAuthAction]);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    return performAuthAction(() => supabase.auth.signInWithPassword({ email, password }));
-  }, [performAuthAction]);
-
   const signInWithOAuth = useCallback(async (provider: 'google' | 'github') => {
-    return performAuthAction(() => supabase.auth.signInWithOAuth({ 
-      provider, 
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      }
-    }));
-  }, [performAuthAction]);
-
-  const signOut = useCallback(async () => {
+    console.log('Auth - Starting OAuth sign in with:', provider);
+    
+    if (!isConfigured) {
+      const error = { name: 'ConfigurationError', message: 'Supabase not configured' } as AuthError;
+      handleApiError(error, 'action');
+      return { data: null, error };
+    }
+    
     dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: true } });
-    const { error } = await supabase.auth.signOut();
-    if (error) handleApiError(error, 'action');
-    // onAuthStateChange will handle clearing state via CLEAR_STATE
-    dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: false } });
+    dispatch({ type: 'SET_ERROR', payload: { key: 'action', message: null } });
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({ 
+        provider, 
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) {
+        handleApiError(error, 'action');
+      }
+      
+      return { data, error };
+    } catch (error) {
+      handleApiError(error as AuthError, 'action');
+      return { data: null, error: error as AuthError };
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: false } });
+    }
   }, [handleApiError]);
 
+  const signOut = useCallback(async () => {
+    console.log('Auth - Starting sign out');
+    dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: true } });
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      handleApiError(error, 'action');
+    } else {
+      toast({
+        title: 'تم تسجيل الخروج',
+        description: 'تم تسجيل خروجك بنجاح',
+        variant: 'default',
+      });
+    }
+    // onAuthStateChange will handle clearing state via CLEAR_STATE
+    dispatch({ type: 'SET_LOADING', payload: { key: 'action', value: false } });
+  }, [handleApiError, toast]);
+
   const refreshSession = useCallback(async () => {
+    console.log('Auth - Refreshing session');
     dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: true } });
     const { error } = await supabase.auth.refreshSession();
     if (error) handleApiError(error, 'auth');
@@ -288,11 +470,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [handleApiError]);
 
   const createProfile = useCallback(async (userId: string, profileData: Partial<Profile>) => {
+    console.log('Auth - Creating profile for user:', userId);
     dispatch({ type: 'SET_LOADING', payload: { key: 'profile', value: true } });
     try {
         const { data, error } = await supabase
             .from('profiles')
-            .insert({ id: userId, ...profileData })
+            .insert({ 
+              id: userId, 
+              ...profileData,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
             .select()
             .single();
 
@@ -303,7 +491,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         
         dispatch({ type: 'PROFILE_LOADED', payload: { profile: data } });
-        toast({ title: 'Profile Created', description: 'Your profile has been successfully created.' });
+        toast({ 
+          title: 'تم إنشاء الملف الشخصي', 
+          description: 'تم إنشاء ملفك الشخصي بنجاح',
+          variant: 'default'
+        });
         return data;
     } catch (error) {
         handleApiError(error as Error, 'profile');
@@ -317,6 +509,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       handleApiError(new Error("No user is signed in to update profile."), 'profile');
       return;
     }
+    
+    console.log('Auth - Updating profile for user:', state.user.id);
     dispatch({ type: 'SET_LOADING', payload: { key: 'profile', value: true } });
     try {
       const { data, error } = await supabase
@@ -332,7 +526,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       dispatch({ type: 'PROFILE_LOADED', payload: { profile: data } });
-      toast({ title: 'Success', description: 'Profile updated successfully.' });
+      toast({ 
+        title: 'تم التحديث', 
+        description: 'تم تحديث ملفك الشخصي بنجاح',
+        variant: 'default'
+      });
     } catch (error) {
       handleApiError(error as Error, 'profile');
     }
