@@ -58,6 +58,7 @@ const initialState: AuthState = {
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case 'AUTH_STATE_CHANGE':
+      // Ensure loading is always false after auth state change, regardless of session presence
       return {
         ...state,
         session: action.payload.session,
@@ -197,18 +198,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'AUTH_STATE_CHANGE', payload: { session, user: session?.user ?? null } });
       if (session?.user) {
         fetchProfile(session.user.id);
+      } else {
+        // Ensure loading state is set to false even when no session exists
+        dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: false } });
+        console.log('Auth - No active session found, setting loading to false');
       }
+    }).catch(error => {
+      console.error('Error checking session:', error);
+      // Make sure loading state is turned off even on error
+      dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: false } });
+      handleApiError(error, 'auth');
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log(`Auth - State change event: ${event}`, !!session);
+
+        // Update auth state for all events
         dispatch({ type: 'AUTH_STATE_CHANGE', payload: { session, user: session?.user ?? null } });
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchProfile(session.user.id);
-        }
-        if (event === 'SIGNED_OUT') {
+
+        // Handle specific events
+        switch (event) {
+          case 'SIGNED_IN':
+            if (session?.user) {
+              await fetchProfile(session.user.id);
+            }
+            break;
+
+          case 'SIGNED_OUT':
             dispatch({ type: 'CLEAR_STATE' });
-            dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: false } });
+            break;
+
+          case 'USER_UPDATED':
+            if (session?.user) {
+              await fetchProfile(session.user.id);
+            }
+            break;
+
+          case 'INITIAL_SESSION':
+            // This ensures loading is set to false for initial session detection
+            if (!session) {
+              dispatch({ type: 'SET_LOADING', payload: { key: 'auth', value: false } });
+            }
+            break;
         }
       }
     );
