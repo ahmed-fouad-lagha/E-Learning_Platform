@@ -49,7 +49,9 @@ export function ProtectedRoute({
   }
 
   // Show error state
-  if (error) {
+  if (error && (error.auth || error.profile || error.action)) {
+    const errorMsg = error.auth || error.profile || error.action;
+    let errorKey: "auth" | "profile" | "action" = error.auth ? "auth" : error.profile ? "profile" : "action";
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -60,9 +62,9 @@ export function ProtectedRoute({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-gray-600 mb-4">{errorMsg}</p>
             <div className="flex gap-2">
-              <Button onClick={clearError} variant="outline" className="flex-1">
+              <Button onClick={() => clearError(errorKey)} variant="outline" className="flex-1">
                 Dismiss
               </Button>
               <Button onClick={refreshSession} className="flex-1">
