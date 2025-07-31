@@ -7,10 +7,10 @@ interface Params {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { fileId } = params
+    const { fileId } = await params
 
     if (!fileId) {
       return NextResponse.json(
