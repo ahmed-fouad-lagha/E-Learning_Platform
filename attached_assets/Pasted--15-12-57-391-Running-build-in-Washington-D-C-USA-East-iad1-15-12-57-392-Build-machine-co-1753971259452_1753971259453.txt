@@ -1,0 +1,95 @@
+[15:12:57.391] Running build in Washington, D.C., USA (East) – iad1
+[15:12:57.392] Build machine configuration: 2 cores, 8 GB
+[15:12:57.468] Cloning github.com/ahmed-fouad-lagha/E-Learning_Platform (Branch: main, Commit: d0ce644)
+[15:12:57.957] Cloning completed: 489.000ms
+[15:12:58.065] Found .vercelignore
+[15:12:58.119] Removed 77 ignored files defined in .vercelignore
+[15:12:58.119]   /.vscode/settings.json
+[15:12:58.119]   /docs/AUTH_TEST_RESULTS.md
+[15:12:58.119]   /docs/auth/AUTH_DEBUGGING_GUIDE.md
+[15:12:58.119]   /docs/auth/DOMAIN_CONSISTENCY_FIX.md
+[15:12:58.119]   /docs/auth/ENHANCED_AUTH_SYSTEM_GUIDE.md
+[15:12:58.119]   /docs/auth/FREE_OAUTH_DOMAIN_FIX.md
+[15:12:58.120]   /docs/auth/GOOGLE_OAUTH_DOUBLE_URL_FIX.md
+[15:12:58.120]   /docs/auth/GOOGLE_OAUTH_REDIRECT_LOOP_FIX.md
+[15:12:58.120]   /docs/auth/GOOGLE_OAUTH_SETUP.md
+[15:12:58.120]   /docs/auth/LOCAL_DEV_OAUTH_FIX.md
+[15:13:00.753] Restored build cache from previous deployment (FLMUmxHdxir3gg8GoLmxQTKx8aBQ)
+[15:13:03.076] Running "vercel build"
+[15:13:03.557] Vercel CLI 44.6.4
+[15:13:03.920] Warning: Detected "engines": { "node": ">=18.0.0" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: http://vercel.link/node-version
+[15:13:03.939] Installing dependencies...
+[15:13:06.662] npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
+[15:13:06.807] npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+[15:13:07.931] npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+[15:13:08.124] npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
+[15:13:08.128] npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+[15:13:08.149] npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
+[15:13:08.167] npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+[15:13:09.301] 
+[15:13:09.302] added 349 packages, and changed 2 packages in 5s
+[15:13:09.302] 
+[15:13:09.303] 219 packages are looking for funding
+[15:13:09.303]   run `npm fund` for details
+[15:13:09.338] Detected Next.js version: 15.3.5
+[15:13:09.343] Running "npm run vercel-build"
+[15:13:09.464] 
+[15:13:09.465] > nextjs@0.1.0 vercel-build
+[15:13:09.465] > prisma generate && npm run build
+[15:13:09.465] 
+[15:13:10.190] Prisma schema loaded from prisma/schema.prisma
+[15:13:10.802] 
+[15:13:10.803] ✔ Generated Prisma Client (v6.11.1) to ./node_modules/@prisma/client in 375ms
+[15:13:10.804] 
+[15:13:10.804] Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+[15:13:10.804] 
+[15:13:10.804] Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+[15:13:10.804] 
+[15:13:10.932] 
+[15:13:10.932] > nextjs@0.1.0 build
+[15:13:10.933] > next build
+[15:13:10.933] 
+[15:13:12.180]    ▲ Next.js 15.3.5
+[15:13:12.181] 
+[15:13:12.256]    Creating an optimized production build ...
+[15:13:12.778] > [PWA] Compile server
+[15:13:12.779] > [PWA] Compile server
+[15:13:12.780] > [PWA] Compile client (static)
+[15:13:12.781] > [PWA] Auto register service worker with: /vercel/path0/node_modules/next-pwa/register.js
+[15:13:12.781] > [PWA] Service worker: /vercel/path0/public/sw.js
+[15:13:12.781] > [PWA]   url: /sw.js
+[15:13:12.782] > [PWA]   scope: /
+[15:13:31.742] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (128kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+[15:13:31.764] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (100kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+[15:13:31.926] Failed to compile.
+[15:13:31.926] 
+[15:13:31.926] ./app/api/courses/[courseId]/enroll-with-credits/route.ts
+[15:13:31.926] Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+[15:13:31.927] 
+[15:13:31.927] https://nextjs.org/docs/messages/module-not-found
+[15:13:31.927] 
+[15:13:31.927] ./app/api/credits/cards/generate/route.ts
+[15:13:31.928] Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+[15:13:31.928] 
+[15:13:31.928] https://nextjs.org/docs/messages/module-not-found
+[15:13:31.928] 
+[15:13:31.928] ./app/api/credits/cards/list/route.ts
+[15:13:31.928] Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+[15:13:31.928] 
+[15:13:31.928] https://nextjs.org/docs/messages/module-not-found
+[15:13:31.928] 
+[15:13:31.928] ./app/api/credits/redeem/route.ts
+[15:13:31.928] Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+[15:13:31.928] 
+[15:13:31.928] https://nextjs.org/docs/messages/module-not-found
+[15:13:31.928] 
+[15:13:31.928] ./app/api/credits/wallet/route.ts
+[15:13:31.928] Module not found: Can't resolve '@supabase/auth-helpers-nextjs'
+[15:13:31.928] 
+[15:13:31.928] https://nextjs.org/docs/messages/module-not-found
+[15:13:31.929] 
+[15:13:31.932] 
+[15:13:31.935] > Build failed because of webpack errors
+[15:13:31.989] Error: Command "npm run vercel-build" exited with 1
+[15:13:32.353] 
+[15:13:35.291] Exiting build container
