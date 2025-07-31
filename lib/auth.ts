@@ -5,8 +5,10 @@ import jwt from 'jsonwebtoken'
 import speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
 import nodemailer from 'nodemailer'
+import { User } from '@supabase/supabase-js';
+import { supabase } from './supabase-client';
 
-export type UserRole = 'student' | 'teacher' | 'admin' | 'parent'
+export type UserRole = 'student' | 'teacher' | 'admin' | 'parent' | 'STUDENT' | 'TEACHER' | 'PARENT' | 'ADMIN';
 export type SessionStatus = 'active' | 'expired' | 'revoked'
 
 export interface AuthUser {
@@ -14,6 +16,17 @@ export interface AuthUser {
   email: string
   role: UserRole
   profile?: any
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  role: UserRole;
+  grade?: string;
+  wilaya?: string;
+  school?: string;
+  isVerified: boolean;
 }
 
 export async function createClient() {
@@ -61,6 +74,35 @@ export async function getUser(): Promise<AuthUser | null> {
   }
 }
 
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role as UserRole,
+      grade: data.grade,
+      wilaya: data.wilaya,
+      school: data.school,
+      isVerified: data.is_verified
+    };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+}
+
 export async function requireAuth(roles?: UserRole[]) {
   const user = await getUser()
   
@@ -73,6 +115,97 @@ export async function requireAuth(roles?: UserRole[]) {
   }
   
   return user
+}
+
+export async function hasPermission(
+  userId: string, 
+  action: string, 
+  resource?: string
+): Promise<boolean> {
+  const profile = await getUserProfile(userId);
+  if (!profile) return false;
+
+  switch (profile.role) {
+    case 'ADMIN':
+    case 'ADMIN':
+      return true; // Admins can do everything
+
+    case 'TEACHER':
+    case 'TEACHER':
+      // Teachers can manage their own courses and students
+      if (action === 'create_course') return true;
+      if (action === 'edit_course' && resource) {
+        // Check if teacher owns the course
+        return await isTeacherCourse(userId, resource);
+      }
+      if (action === 'view_students') return true;
+      return false;
+
+    case 'STUDENT':
+    case 'STUDENT':
+      // Students can only view and enroll in courses
+      if (action === 'view_courses') return true;
+      if (action === 'enroll_course') return true;
+      if (action === 'view_enrolled_courses') return true;
+      return false;
+
+    case 'PARENT':
+    case 'PARENT':
+      // Parents can view their children's progress
+      if (action === 'view_child_progress') return true;
+      return false;
+
+    default:
+      return false;
+  }
+}
+
+async function isTeacherCourse(teacherId: string, courseId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('instructor_id')
+      .eq('id', courseId)
+      .single();
+
+    if (error || !data) return false;
+    return data.instructor_id === teacherId;
+  } catch (error) {
+    return false;
+  }
+}
+
+export function requireRole(allowedRoles: UserRole[]) {
+  return async (userId: string): Promise<boolean> => {
+    const profile = await getUserProfile(userId);
+    if (!profile) return false;
+    return allowedRoles.includes(profile.role);
+  };
+}
+
+// Middleware helper for API routes
+export async function checkAuth(request: Request): Promise<{ user: User | null, profile: UserProfile | null }> {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { user: null, profile: null };
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return { user: null, profile: null };
+    }
+
+    const profile = await getUserProfile(user.id);
+    return { user, profile };
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return { user: null, profile: null };
+  }
 }
 
 export function generateSecureToken(): string {
