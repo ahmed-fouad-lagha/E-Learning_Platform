@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
 import { Toaster } from '@/components/ui/toaster';
+import ServiceWorkerStatus from '@/components/pwa/service-worker-status';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -80,8 +81,10 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#10b981'
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#10b981',
+  viewportFit: 'cover'
 };
 
 export default function RootLayout({
@@ -97,16 +100,24 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="EduDZ" />
+        <meta name="apple-mobile-web-app-title" content="EVA - التعلم الجزائري" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#10b981" />
         <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="apple-mobile-web-app-orientations" content="portrait" />
+        <link rel="apple-touch-startup-image" href="/icon-512x512.svg" />
+        <meta name="mobile-web-app-title" content="EVA" />
+        <meta name="application-name" content="EVA" />
+        <meta name="msapplication-starturl" content="/" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           <main>
             <div id="root">{children}</div>
           </main>
+          <ServiceWorkerStatus />
           <div id="modal-root"></div>
           <div id="toast-root"></div>
           <Toaster />

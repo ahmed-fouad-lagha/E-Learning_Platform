@@ -341,6 +341,91 @@ html {
   .mobile-optimized {
     font-size: 16px; /* Prevents zoom on iOS */
   }
+  
+  /* Add padding bottom for mobile bottom navigation */
+  body:has(.fixed.bottom-0) {
+    padding-bottom: 70px;
+  }
+  
+  /* Improve touch targets */
+  button, .btn, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Optimize modal sizing */
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full-width {
+    width: 100% !important;
+  }
+}
+
+/* Touch-friendly interactions */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Safe area support for devices with notches */
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* PWA-specific styles */
+@media (display-mode: standalone) {
+  body {
+    /* Remove any default margins when in PWA mode */
+    margin: 0;
+    /* Prevent overscroll bounce */
+    overscroll-behavior: none;
+  }
+  
+  .pwa-only {
+    display: block;
+  }
+  
+  .browser-only {
+    display: none;
+  }
+}
+
+/* Default styles for browsers */
+@media not (display-mode: standalone) {
+  .pwa-only {
+    display: none;
+  }
+  
+  .browser-only {
+    display: block;
+  }
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .bg-white\/80 {
+    background-color: white;
+  }
+  
+  .text-gray-400 {
+    color: #374151;
+  }
 }
 
 /* Loading states */

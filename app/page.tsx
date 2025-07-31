@@ -527,7 +527,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="absolute top-20 left-10 w-20 h-20 bg-emerald-200 rounded-full opacity-20 animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-pulse delay-1000"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="text-center">
             <div className="flex justify-center mb-6">
@@ -536,15 +536,15 @@ export default function Home() {
                 {language === 'ar' ? 'منصة معتمدة رسمياً من الديوان الوطني' : 'Plateforme officiellement approuvée par ONEC'}
               </Badge>
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight animate-fade-in-up">
               {currentContent.hero.title}
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed animate-fade-in-up delay-200">
               {currentContent.hero.subtitle}
             </p>
-            
+
             <p className="text-lg text-gray-500 mb-10 max-w-2xl mx-auto animate-fade-in-up delay-300">
               {currentContent.hero.description}
             </p>
@@ -630,7 +630,7 @@ export default function Home() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <CardDescription className="text-base leading-relaxed">
+                  <CardDescription className="text`base leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
@@ -650,7 +650,7 @@ export default function Home() {
             <p className="text-xl text-gray-600 mb-8">
               {currentContent.subjects.description}
             </p>
-            
+
             <Tabs defaultValue="all" className="w-full max-w-md mx-auto">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="all">{language === 'ar' ? 'الكل' : 'Tous'}</TabsTrigger>
@@ -685,7 +685,7 @@ export default function Home() {
                     </div>
                     <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-600 transition-colors group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">{language === 'ar' ? 'التقدم' : 'Progrès'}</span>
@@ -762,7 +762,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
             <div className="flex justify-center mt-8 space-x-2 rtl:space-x-reverse">
               {testimonials.map((_, index) => (
                 <button
@@ -787,14 +787,14 @@ export default function Home() {
           <div className="absolute bottom-10 right-10 w-32 h-32 bg-white opacity-10 rounded-full animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white opacity-5 rounded-full animate-pulse delay-500"></div>
         </div>
-        
+
         <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
               <Mail className="h-8 w-8 text-white" />
             </div>
           </div>
-          
+
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             {currentContent.newsletter.title}
           </h2>
@@ -928,7 +928,7 @@ export default function Home() {
           <div className="absolute bottom-10 right-10 w-32 h-32 bg-white opacity-10 rounded-full animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white opacity-5 rounded-full animate-pulse delay-500"></div>
         </div>
-        
+
         <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             {currentContent.cta.title}
@@ -977,7 +977,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4 text-lg">
                 {currentContent.footer.quickLinks}
@@ -989,7 +989,7 @@ export default function Home() {
                 <li><a href="#" className="hover:text-white transition-colors hover:translate-x-1 rtl:hover:-translate-x-1 inline-block">{language === 'ar' ? 'المدونة' : 'Blog'}</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4 text-lg">
                 {currentContent.footer.subjects}
@@ -1001,7 +1001,7 @@ export default function Home() {
                 <li><a href="#" className="hover:text-white transition-colors hover:translate-x-1 rtl:hover:-translate-x-1 inline-block">{language === 'ar' ? 'الأدب' : 'Littérature'}</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold mb-4 text-lg">
                 {currentContent.footer.contact}
@@ -1022,7 +1022,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
               © 2024 {language === 'ar' ? 'منصة التعلم الجزائرية' : 'EduDZ Platform'}. {currentContent.footer.rights}
@@ -1041,6 +1041,61 @@ export default function Home() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// PWAInstallPrompt Component
+function PWAInstallPrompt() {
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      return;
+    }
+
+    deferredPrompt.prompt();
+
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
+
+  if (!isInstallable) {
+    return null;
+  }
+
+  return (
+    <div className="fixed bottom-0 left-0 w-full bg-white p-4 shadow-md flex items-center justify-between">
+      <p>Install our app for a better experience!</p>
+      <button
+        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
+        onClick={handleInstallClick}
+      >
+        Install
+      </button>
     </div>
   );
 }
