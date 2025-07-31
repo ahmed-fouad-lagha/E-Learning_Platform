@@ -12,7 +12,13 @@ const createLessonSchema = z.object({
   duration: z.number().min(1, 'مدة الدرس مطلوبة'),
   order: z.number().min(1, 'ترتيب الدرس مطلوب'),
   downloadSize: z.number().optional(),
-  offlineContent: z.string().optional()
+  offlineContent: z.string().optional(),
+  attachedFiles: z.array(z.string()).optional(), // Array of file IDs
+  isPublished: z.boolean().default(false),
+  objectives: z.string().optional(),
+  objectivesAr: z.string().optional(),
+  exercises: z.string().optional(), // JSON string with exercises
+  exercisesAr: z.string().optional()
 });
 
 export async function GET(
@@ -53,6 +59,31 @@ export async function POST(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    // Authentication check
+    const { supabase } = await import('@/lib/supabase');
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    if (authError || !session) {
+      return NextResponse.json({
+        success: false,
+        error: 'غير مصرح لك بالوصول'
+      }, { status: 401 });
+    }
+
+    // Check if user is teacher or admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile || !['TEACHER', 'ADMIN'].includes(profile.role)) {
+      return NextResponse.json({
+        success: false,
+        error: 'يجب أن تكون مدرساً لإنشاء الدروس'
+      }, { status: 403 });
+    }
+
     const { courseId } = await params;
     const body = await request.json();
     const validatedData = createLessonSchema.parse(body);
