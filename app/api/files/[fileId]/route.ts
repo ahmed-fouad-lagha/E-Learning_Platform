@@ -1,121 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getFile } from '@/lib/file-storage'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { Client } from '@replit/object-storage';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const storage = new Client();
+interface Params {
+  fileId: string
+}
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { fileId: string } }
+  { params }: { params: Params }
 ) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { fileId } = params
 
-    if (authError || !session) {
-      return NextResponse.json({
-        success: false,
-        error: 'غير مصرح لك بالوصول'
-      }, { status: 401 });
+    if (!fileId) {
+      return NextResponse.json(
+        { error: 'File ID is required' },
+        { status: 400 }
+      )
     }
 
-    const fileId = params.fileId;
+    // Decode the file path
+    const filePath = decodeURIComponent(fileId)
 
-    // Get file metadata from database
-    const { data: fileData, error: fileError } = await supabase
-      .from('file_uploads')
-      .select(`
-        *,
-        lessons!inner(
-          course_id,
-          courses!inner(id)
-        )
-      `)
-      .eq('id', fileId)
-      .single();
+    // Get file data
+    const fileData = await getFile(filePath)
 
-    if (fileError || !fileData) {
-      return NextResponse.json({
-        success: false,
-        error: 'الملف غير موجود'
-      }, { status: 404 });
+    if (!fileData) {
+      return NextResponse.json(
+        { error: 'File not found' },
+        { status: 404 }
+      )
     }
 
-    // Check access permissions
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
-
-    const isStaff = profile?.role && ['TEACHER', 'ADMIN'].includes(profile.role);
-    let hasAccess = isStaff;
-
-    // Check if student is enrolled in the course
-    if (!hasAccess && fileData.lessons?.course_id) {
-      const { data: enrollment } = await supabase
-        .from('course_enrollments')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('course_id', fileData.lessons.course_id)
-        .single();
-
-      hasAccess = !!enrollment;
-    }
-
-    // Check if file is public
-    if (!hasAccess && fileData.is_public) {
-      hasAccess = true;
-    }
-
-    if (!hasAccess) {
-      return NextResponse.json({
-        success: false,
-        error: 'غير مصرح لك بالوصول إلى هذا الملف'
-      }, { status: 403 });
-    }
-
-    // Get download parameter
-    const url = new URL(request.url);
-    const download = url.searchParams.get('download') === 'true';
-
-    try {
-      // Download file from Object Storage
-      const fileBuffer = await storage.downloadAsBytes(fileData.file_name);
-      
-      // Set appropriate headers
-      const headers = new Headers();
-      headers.set('Content-Type', fileData.mime_type);
-      headers.set('Content-Length', fileData.file_size.toString());
-      
-      if (download) {
-        headers.set('Content-Disposition', `attachment; filename="${fileData.original_name}"`);
-      } else {
-        // For preview, set inline disposition
-        headers.set('Content-Disposition', `inline; filename="${fileData.original_name}"`);
+    // Determine content type based on file extension
+    const getContentType = (fileName: string): string => {
+      const ext = fileName.toLowerCase().split('.').pop()
+      switch (ext) {
+        case 'pdf':
+          return 'application/pdf'
+        case 'jpg':
+        case 'jpeg':
+          return 'image/jpeg'
+        case 'png':
+          return 'image/png'
+        case 'gif':
+          return 'image/gif'
+        case 'txt':
+          return 'text/plain'
+        case 'doc':
+          return 'application/msword'
+        case 'docx':
+          return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        default:
+          return 'application/octet-stream'
       }
-
-      return new NextResponse(fileBuffer, {
-        status: 200,
-        headers
-      });
-
-    } catch (storageError) {
-      console.error('File retrieval error:', storageError);
-      return NextResponse.json({
-        success: false,
-        error: 'خطأ في استرجاع الملف'
-      }, { status: 500 });
     }
 
+    const contentType = getContentType(filePath)
+
+    return new NextResponse(fileData, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000',
+      },
+    })
   } catch (error) {
-    console.error('File access API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'خطأ في الخادم'
-    }, { status: 500 });
+    console.error('File serving error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

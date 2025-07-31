@@ -1,8 +1,138 @@
+// File storage utilities that work in both Replit and Vercel environments
+import { createClient } from '@/lib/supabase'
 
-import { Client } from '@replit/object-storage';
+// Check if we're in Replit environment
+const isReplitEnvironment = process.env.REPL_ID !== undefined
 
-// Initialize Replit Object Storage client
-const storage = new Client();
+// Dynamically import Replit object storage only if available
+let ReplitObjectStorage: any = null
+if (isReplitEnvironment) {
+  try {
+    ReplitObjectStorage = require('@replit/object-storage')
+  } catch (error) {
+    console.log('Replit object storage not available, using Supabase storage')
+  }
+}
+
+export interface UploadResult {
+  success: boolean
+  url?: string
+  path?: string
+  error?: string
+}
+
+export async function uploadFile(
+  file: File,
+  folder: string = 'uploads'
+): Promise<UploadResult> {
+  try {
+    // Use Replit object storage if available
+    if (ReplitObjectStorage) {
+      return await uploadToReplit(file, folder)
+    }
+
+    // Fallback to Supabase storage
+    return await uploadToSupabase(file, folder)
+  } catch (error) {
+    console.error('File upload error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Upload failed'
+    }
+  }
+}
+
+async function uploadToReplit(file: File, folder: string): Promise<UploadResult> {
+  const fileName = `${folder}/${Date.now()}-${file.name}`
+  const buffer = await file.arrayBuffer()
+
+  // Initialize Replit Object Storage client
+  const storage = new ReplitObjectStorage.Client();
+
+  await storage.uploadFromBytes(fileName, new Uint8Array(buffer));
+
+  return {
+    success: true,
+    url: `/api/files/${encodeURIComponent(fileName)}`,
+    path: fileName
+  }
+}
+
+async function uploadToSupabase(file: File, folder: string): Promise<UploadResult> {
+  const supabase = createClient()
+  const fileName = `${folder}/${Date.now()}-${file.name}`
+
+  const { data, error } = await supabase.storage
+    .from('files')
+    .upload(fileName, file)
+
+  if (error) {
+    throw new Error(`Supabase upload failed: ${error.message}`)
+  }
+
+  // Get public URL
+  const { data: urlData } = supabase.storage
+    .from('files')
+    .getPublicUrl(fileName)
+
+  return {
+    success: true,
+    url: urlData.publicUrl,
+    path: fileName
+  }
+}
+
+export async function getFile(filePath: string): Promise<ArrayBuffer | null> {
+  try {
+    // Use Replit object storage if available
+    if (ReplitObjectStorage) {
+
+      // Initialize Replit Object Storage client
+      const storage = new ReplitObjectStorage.Client();
+
+      const data = await storage.read(filePath)
+      return data ? data.buffer : null
+    }
+
+    // Fallback to Supabase storage
+    const supabase = createClient()
+    const { data, error } = await supabase.storage
+      .from('files')
+      .download(filePath)
+
+    if (error || !data) {
+      return null
+    }
+
+    return await data.arrayBuffer()
+  } catch (error) {
+    console.error('File retrieval error:', error)
+    return null
+  }
+}
+
+export async function deleteFile(filePath: string): Promise<boolean> {
+  try {
+    // Use Replit object storage if available
+    if (ReplitObjectStorage) {
+      // Initialize Replit Object Storage client
+      const storage = new ReplitObjectStorage.Client();
+      await storage.delete(filePath)
+      return true
+    }
+
+    // Fallback to Supabase storage
+    const supabase = createClient()
+    const { error } = await supabase.storage
+      .from('files')
+      .remove([filePath])
+
+    return !error
+  } catch (error) {
+    console.error('File deletion error:', error)
+    return false
+  }
+}
 
 export interface FileUploadResult {
   success: boolean;
@@ -68,150 +198,4 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   
   return { valid: true };
 }
-
-export async function uploadFile(
-  file: File, 
-  userId: string, 
-  options?: { courseId?: string; lessonId?: string }
-): Promise<FileUploadResult> {
-  try {
-    // Validate file
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      return {
-        success: false,
-        fileId: '',
-        fileName: '',
-        fileUrl: '',
-        fileSize: 0,
-        mimeType: '',
-        error: validation.error
-      };
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${userId}_${timestamp}.${fileExtension}`;
-    const fileId = `file_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Upload to Replit Object Storage
-    const buffer = await file.arrayBuffer();
-    await storage.uploadFromBytes(fileName, new Uint8Array(buffer));
-
-    // Create file URL (assuming Replit Object Storage provides URLs)
-    const fileUrl = `https://objectstorage.replit.com/${fileName}`;
-
-    // Store metadata in database
-    const { supabase } = await import('./supabase');
-    const { error: dbError } = await supabase
-      .from('file_uploads')
-      .insert([{
-        id: fileId,
-        original_name: file.name,
-        file_name: fileName,
-        mime_type: file.type,
-        file_size: file.size,
-        uploaded_by: userId,
-        course_id: options?.courseId,
-        lesson_id: options?.lessonId,
-        file_type: getFileType(file.type),
-        file_url: fileUrl
-      }]);
-
-    if (dbError) {
-      console.error('Database error:', dbError);
-      // Continue anyway, file is uploaded
-    }
-
-    return {
-      success: true,
-      fileId,
-      fileName,
-      fileUrl,
-      fileSize: file.size,
-      mimeType: file.type
-    };
-
-  } catch (error) {
-    console.error('File upload error:', error);
-    return {
-      success: false,
-      fileId: '',
-      fileName: '',
-      fileUrl: '',
-      fileSize: 0,
-      mimeType: '',
-      error: 'خطأ في رفع الملف'
-    };
-  }
-}
-
-export async function deleteFile(fileId: string, userId: string): Promise<boolean> {
-  try {
-    const { supabase } = await import('./supabase');
-    
-    // Get file info
-    const { data: fileData, error: fetchError } = await supabase
-      .from('file_uploads')
-      .select('file_name, uploaded_by')
-      .eq('id', fileId)
-      .single();
-
-    if (fetchError || !fileData) {
-      return false;
-    }
-
-    // Check ownership (or admin permissions)
-    if (fileData.uploaded_by !== userId) {
-      // TODO: Add admin check here
-      return false;
-    }
-
-    // Delete from Object Storage
-    await storage.delete(fileData.file_name);
-
-    // Delete from database
-    const { error: deleteError } = await supabase
-      .from('file_uploads')
-      .delete()
-      .eq('id', fileId);
-
-    return !deleteError;
-
-  } catch (error) {
-    console.error('File deletion error:', error);
-    return false;
-  }
-}
-
-export async function getFilesByLesson(lessonId: string): Promise<FileMetadata[]> {
-  try {
-    const { supabase } = await import('./supabase');
-    
-    const { data, error } = await supabase
-      .from('file_uploads')
-      .select('*')
-      .eq('lesson_id', lessonId)
-      .order('uploaded_at', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map(file => ({
-      id: file.id,
-      originalName: file.original_name,
-      fileName: file.file_name,
-      mimeType: file.mime_type,
-      fileSize: file.file_size,
-      uploadedBy: file.uploaded_by,
-      uploadedAt: new Date(file.uploaded_at),
-      courseId: file.course_id,
-      lessonId: file.lesson_id,
-      fileType: file.file_type
-    }));
-
-  } catch (error) {
-    console.error('Error fetching files:', error);
-    return [];
-  }
-}
+`
