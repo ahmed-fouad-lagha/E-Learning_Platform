@@ -12,6 +12,7 @@ async function initReplitStorage() {
       ReplitObjectStorage = await import('@replit/object-storage')
     } catch (error) {
       console.log('Replit object storage not available, using Supabase storage')
+      ReplitObjectStorage = false // Mark as unavailable
     }
   }
 }
@@ -29,7 +30,8 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   try {
     // Use Replit object storage if available
-    if (ReplitObjectStorage) {
+    await initReplitStorage()
+    if (ReplitObjectStorage && ReplitObjectStorage !== false) {
       return await uploadToReplit(file, folder)
     }
 
@@ -45,8 +47,7 @@ export async function uploadFile(
 }
 
 async function uploadToReplit(file: File, folder: string): Promise<UploadResult> {
-  await initReplitStorage()
-  if (!ReplitObjectStorage) {
+  if (!ReplitObjectStorage || ReplitObjectStorage === false) {
     throw new Error('Replit object storage not available')
   }
 
@@ -93,7 +94,7 @@ export async function getFile(filePath: string): Promise<ArrayBuffer | null> {
   try {
     // Use Replit object storage if available
     await initReplitStorage()
-    if (ReplitObjectStorage) {
+    if (ReplitObjectStorage && ReplitObjectStorage !== false) {
 
       // Initialize Replit Object Storage client
       const storage = new ReplitObjectStorage.Client();
@@ -123,7 +124,7 @@ export async function deleteFile(filePath: string): Promise<boolean> {
   try {
     // Use Replit object storage if available
     await initReplitStorage()
-    if (ReplitObjectStorage) {
+    if (ReplitObjectStorage && ReplitObjectStorage !== false) {
       // Initialize Replit Object Storage client
       const storage = new ReplitObjectStorage.Client();
       await storage.delete(filePath)

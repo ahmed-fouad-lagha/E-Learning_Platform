@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getCourseById } from '@/lib/courses';
 import { supabase } from '@/lib/supabase-client';
@@ -27,29 +26,29 @@ const updateCourseSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
-    
+    const { courseId } = await params
+
     // Get user ID from auth header for enrollment check
     const authHeader = request.headers.get('authorization');
     let userId: string | undefined;
-    
+
     if (authHeader?.startsWith('Bearer ')) {
       // Extract user ID from session (you'll need to implement this)
       // For now, we'll skip user-specific data
     }
-    
+
     const course = await getCourseById(courseId, userId);
-    
+
     if (!course) {
       return NextResponse.json({
         success: false,
         error: 'الدورة غير موجودة'
       }, { status: 404 });
     }
-    
+
     return NextResponse.json({
       success: true,
       data: course
@@ -70,7 +69,7 @@ export async function PUT(
   try {
     const courseId = params.courseId;
     const body = await request.json();
-    
+
     // Validate input
     const validationResult = updateCourseSchema.safeParse(body);
     if (!validationResult.success) {
@@ -79,9 +78,9 @@ export async function PUT(
         errors: validationResult.error.flatten().fieldErrors
       }, { status: 400 });
     }
-    
+
     const updateData = validationResult.data;
-    
+
     // Convert camelCase to snake_case for database
     const dbUpdateData: any = {};
     if (updateData.title) dbUpdateData.title = updateData.title;
@@ -94,16 +93,16 @@ export async function PUT(
     if (typeof updateData.isPublished === 'boolean') dbUpdateData.is_published = updateData.isPublished;
     if (updateData.estimatedHours) dbUpdateData.estimated_hours = updateData.estimatedHours;
     if (updateData.thumbnail) dbUpdateData.thumbnail = updateData.thumbnail;
-    
+
     dbUpdateData.updated_at = new Date().toISOString();
-    
+
     const { data, error } = await supabase
       .from('courses')
       .update(dbUpdateData)
       .eq('id', courseId)
       .select()
       .single();
-    
+
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json({
@@ -111,7 +110,7 @@ export async function PUT(
         error: 'خطأ في تحديث الدورة'
       }, { status: 500 });
     }
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -143,14 +142,14 @@ export async function DELETE(
 ) {
   try {
     const courseId = params.courseId;
-    
+
     // TODO: Add authorization check - only course instructor or admin can delete
-    
+
     const { error } = await supabase
       .from('courses')
       .delete()
       .eq('id', courseId);
-    
+
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json({
@@ -158,7 +157,7 @@ export async function DELETE(
         error: 'خطأ في حذف الدورة'
       }, { status: 500 });
     }
-    
+
     return NextResponse.json({
       success: true,
       message: 'تم حذف الدورة بنجاح'
