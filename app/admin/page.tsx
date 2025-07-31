@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,25 +19,40 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { user, profile, loading } = useAuth();
+  const { user, getUserProfile, loading } = useAuth();
   const router = useRouter();
+  const [profile, setProfile] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || profile?.role !== 'ADMIN')) {
-      router.push('/auth');
-    }
-  }, [user, profile, loading, router]);
+    const checkAdmin = async () => {
+      if (loading) return;
+      
+      if (!user) {
+        router.push('/auth');
+        return;
+      }
+      
+      const userProfile = await getUserProfile();
+      setProfile(userProfile);
+      
+      if (!userProfile || userProfile.role !== 'ADMIN') {
+        router.push('/auth');
+        return;
+      }
+      
+      setIsAdmin(true);
+    };
+    
+    checkAdmin();
+  }, [user, getUserProfile, loading, router]);
 
-  if (loading) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600"></div>
       </div>
     );
-  }
-
-  if (!user || profile?.role !== 'ADMIN') {
-    return null;
   }
 
   const stats = [
