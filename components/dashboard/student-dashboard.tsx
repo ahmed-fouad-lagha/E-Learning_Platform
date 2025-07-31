@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useProgressTracking } from '@/hooks/use-progress-tracking'
 import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -69,11 +70,9 @@ interface StudySession {
 }
 
 export function StudentDashboard() {
-  const [profile, setProfile] = useState<StudentProfile | null>(null)
-  const [courses, setCourses] = useState<Course[]>([])
-  const [achievements, setAchievements] = useState<Achievement[]>([])
-  const [recentSessions, setRecentSessions] = useState<StudySession[]>([])
+  const [dashboardData, setDashboardData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const { getDashboardData } = useProgressTracking()
 
   useEffect(() => {
     loadDashboardData()
@@ -81,25 +80,8 @@ export function StudentDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Load all dashboard data
-      const [profileRes, coursesRes, achievementsRes, sessionsRes] = await Promise.all([
-        fetch('/api/student/profile'),
-        fetch('/api/student/courses'),
-        fetch('/api/student/achievements'),
-        fetch('/api/student/study-sessions')
-      ])
-
-      const [profileData, coursesData, achievementsData, sessionsData] = await Promise.all([
-        profileRes.json(),
-        coursesRes.json(),
-        achievementsRes.json(),
-        sessionsRes.json()
-      ])
-
-      setProfile(profileData)
-      setCourses(coursesData)
-      setAchievements(achievementsData)
-      setRecentSessions(sessionsData)
+      const data = await getDashboardData()
+      setDashboardData(data)
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     } finally {
@@ -137,9 +119,11 @@ export function StudentDashboard() {
     )
   }
 
-  if (!profile) {
+  if (!dashboardData) {
     return <div className="container mx-auto p-6">خطأ في تحميل البيانات</div>
   }
+
+  const { summary, courses, recentActivity, continueLesson, achievements, weeklyActivity } = dashboardData
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
@@ -147,25 +131,24 @@ export function StudentDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 space-x-reverse">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={profile.avatarUrl} />
+            <AvatarImage src="" />
             <AvatarFallback className="text-lg">
-              {profile.firstName[0]}{profile.lastName[0]}
+              طا
             </AvatarFallback>
           </Avatar>
           <div>
             <h1 className="text-3xl font-bold">
-              أهلاً بك، {profile.firstName}! 👋
+              أهلاً بك، طالب! 👋
             </h1>
             <p className="text-gray-600">
-              {profile.grade} • {profile.wilaya}
-              {profile.school && ` • ${profile.school}`}
+              مرحباً بك في منصة EVA التعليمية
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-2 space-x-reverse">
           <div className="flex items-center text-orange-600">
             <Flame className="h-5 w-5 ml-1" />
-            <span className="font-bold">{profile.learningStreak}</span>
+            <span className="font-bold">{summary.currentStreak}</span>
             <span className="text-sm">يوم متتالي</span>
           </div>
         </div>
@@ -179,22 +162,22 @@ export function StudentDashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatStudyTime(profile.totalStudyTime)}</div>
+            <div className="text-2xl font-bold">{formatStudyTime(summary.totalTimeThisWeek)}</div>
             <p className="text-xs text-muted-foreground">
-              +2س هذا الأسبوع
+              هذا الأسبوع
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">النقاط المكتسبة</CardTitle>
+            <CardTitle className="text-sm font-medium">متوسط التقدم</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{profile.totalPoints.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{Math.round(summary.averageProgress)}%</div>
             <p className="text-xs text-muted-foreground">
-              المستوى {profile.currentLevel}
+              في جميع الدورات
             </p>
           </CardContent>
         </Card>
@@ -205,24 +188,22 @@ export function StudentDashboard() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {courses.filter(c => c.progress === 100).length}
-            </div>
+            <div className="text-2xl font-bold">{summary.completedCourses}</div>
             <p className="text-xs text-muted-foreground">
-              من أصل {courses.length} كورس
+              من أصل {summary.totalCourses} كورس
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الإنجازات</CardTitle>
+            <CardTitle className="text-sm font-medium">أطول سلسلة</CardTitle>
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{achievements.length}</div>
+            <div className="text-2xl font-bold">{summary.longestStreak}</div>
             <p className="text-xs text-muted-foreground">
-              شارة مكتسبة
+              يوم متتالي
             </p>
           </CardContent>
         </Card>
