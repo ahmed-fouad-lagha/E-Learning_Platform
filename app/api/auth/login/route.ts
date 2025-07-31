@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, rateLimitWithAction, AuthError, verifyMFAToken, createSession } from '@/lib/auth'
+import { createClient, rateLimitWithAction, AuthError } from '@/lib/auth'
+import { applyRateLimit, rateLimitConfigs, validateRequest, validationSchemas, getClientIP, logSecurityEvent, getSecurityHeaders, sanitizeError } from '@/lib/security'
 import { z } from 'zod'
 
 const loginSchema = z.object({
@@ -10,15 +11,56 @@ const loginSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const validatedData = loginSchema.parse(body)
+  const clientIP = getClientIP(request)
+  const userAgent = request.headers.get('user-agent') || 'unknown'
 
+  try {
     // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') || 
-               request.headers.get('x-real-ip') || 
-               'unknown'
-    rateLimitWithAction(ip, 'login')
+    const rateLimit = applyRateLimit(clientIP, rateLimitConfigs.auth)
+    if (!rateLimit.success) {
+      logSecurityEvent({
+        type: 'RATE_LIMIT',
+        ip: clientIP,
+        userAgent,
+        details: { endpoint: 'login' }
+      })
+
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            ...getSecurityHeaders()
+          }
+        }
+      )
+    }
+
+    const body = await request.json()
+
+    // Input validation
+    const loginSchema = z.object({
+      email: validationSchemas.email,
+      password: validationSchemas.password
+    })
+
+    const validation = validateRequest(loginSchema, body)
+    if (!validation.success) {
+      logSecurityEvent({
+        type: 'INVALID_INPUT',
+        ip: clientIP,
+        userAgent,
+        details: { endpoint: 'login', errors: validation.errors }
+      })
+
+      return NextResponse.json(
+        { error: 'Invalid input data' },
+        { status: 400, headers: getSecurityHeaders() }
+      )
+    }
+
+    const { email, password } = validation.data
 
     const supabase = await createClient()
 
@@ -33,7 +75,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!authData.user) {
-      throw new AuthError('Authentication failed', 'AUTH_FAILED')
+      logSecurityEvent({
+        type: 'AUTH_FAILURE',
+        ip: clientIP,
+        userAgent,
+        details: { email, error: authError?.message }
+      })
+
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401, headers: getSecurityHeaders() }
+      )
     }
 
     // Get user profile
@@ -125,7 +177,7 @@ export async function POST(request: NextRequest) {
         try {
           const supabase = await createClient()
           const body = await request.json()
-          
+
           // Get current login attempts
           const { data: currentProfile } = await supabase
             .from('profiles')
@@ -135,7 +187,7 @@ export async function POST(request: NextRequest) {
 
           const newAttempts = (currentProfile?.login_attempts || 0) + 1
           const shouldLock = newAttempts >= 5
-          
+
           await supabase
             .from('profiles')
             .update({
@@ -156,17 +208,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error('Login error:', error)
+    logSecurityEvent({
+      type: 'AUTH_FAILURE',
+      ip: clientIP,
+      userAgent,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' }
+    })
+
+    const sanitizedError = sanitizeError(error)
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: sanitizedError.message },
+      { status: 500, headers: getSecurityHeaders() }
     )
   }
 }
 
 async function updateLearningStreak(userId: string) {
   const supabase = await createClient()
-  
+
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('last_activity, learning_streak')

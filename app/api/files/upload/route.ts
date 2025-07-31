@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile } from '@/lib/file-storage';
 import { createClient } from '@supabase/supabase-js';

@@ -2,23 +2,71 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimit, rateLimitConfigs, validateRequest, validationSchemas, getClientIP, logSecurityEvent, getSecurityHeaders, sanitizeError } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
+  const clientIP = getClientIP(request)
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' }, 
+        { status: 401, headers: getSecurityHeaders() }
+      )
+    }
+
+    // Rate limiting per user
+    const rateLimit = applyRateLimit(`redeem:${user.id}`, rateLimitConfigs.cardRedeem)
+    if (!rateLimit.success) {
+      logSecurityEvent({
+        type: 'RATE_LIMIT',
+        ip: clientIP,
+        userAgent,
+        userId: user.id,
+        details: { endpoint: 'card-redeem' }
+      })
+      
+      return NextResponse.json(
+        { error: 'Too many redemption attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            ...getSecurityHeaders()
+          }
+        }
+      )
     }
 
     const body = await request.json()
-    const { card_code } = body
-
-    if (!card_code) {
-      return NextResponse.json({ error: 'Card code is required' }, { status: 400 })
+    
+    // Input validation
+    const validation = validateRequest(
+      validationSchemas.cardCode,
+      body.card_code
+    )
+    
+    if (!validation.success) {
+      logSecurityEvent({
+        type: 'INVALID_INPUT',
+        ip: clientIP,
+        userAgent,
+        userId: user.id,
+        details: { endpoint: 'card-redeem', errors: validation.errors }
+      })
+      
+      return NextResponse.json(
+        { error: 'Invalid card code format' },
+        { status: 400, headers: getSecurityHeaders() }
+      )
     }
+
+    const card_code = validation.data
 
     // Normalize card code (remove spaces, convert to uppercase)
     const normalizedCode = card_code.replace(/\s+/g, '').toUpperCase()
