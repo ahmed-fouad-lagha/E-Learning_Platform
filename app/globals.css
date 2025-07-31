@@ -310,7 +310,7 @@ html {
   .text-gray-600 {
     color: #1f2937; /* text-gray-800 equivalent */
   }
-  
+
   .text-gray-400 {
     color: #4b5563; /* text-gray-600 equivalent */
   }
@@ -323,7 +323,7 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .animate-pulse {
     animation: none;
   }
@@ -341,30 +341,30 @@ html {
   .mobile-optimized {
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   /* Add padding bottom for mobile bottom navigation */
   body:has(.fixed.bottom-0) {
     padding-bottom: 70px;
   }
-  
+
   /* Improve touch targets */
   button, .btn, a {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Better spacing for mobile */
   .container {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   /* Optimize modal sizing */
   .modal-content {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
   }
-  
+
   /* Full-width buttons on mobile */
   .mobile-full-width {
     width: 100% !important;
@@ -396,11 +396,11 @@ html {
     /* Prevent overscroll bounce */
     overscroll-behavior: none;
   }
-  
+
   .pwa-only {
     display: block;
   }
-  
+
   .browser-only {
     display: none;
   }
@@ -411,7 +411,7 @@ html {
   .pwa-only {
     display: none;
   }
-  
+
   .browser-only {
     display: block;
   }
@@ -422,7 +422,7 @@ html {
   .bg-white\/80 {
     background-color: white;
   }
-  
+
   .text-gray-400 {
     color: #374151;
   }
@@ -515,4 +515,37 @@ html {
   transform: translateX(100%);
   opacity: 0;
   transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* PWA Styles */
+.pwa-only {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .pwa-only {
+    display: block;
+  }
+}
+
+/* Service Worker Status Indicator */
+.service-worker-status {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .service-worker-status {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Animation for status changes */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.status-pulse {
+  animation: statusPulse 2s infinite;
 }
