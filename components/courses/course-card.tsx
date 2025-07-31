@@ -35,10 +35,10 @@ export function CourseCard({
   estimatedHours
 }: CourseCardProps) {
   const [imageError, setImageError] = useState(false);
-  
+
   // Default placeholder image if the thumbnail is not available or fails to load
   const placeholderImage = '/images/course-placeholder.jpg';
-  
+
   // Map subject to Arabic names
   const subjectLabels: Record<string, string> = {
     'MATHEMATICS': 'الرياضيات',
@@ -56,7 +56,7 @@ export function CourseCard({
     'ACCOUNTING': 'المحاسبة',
     'COMPUTER_SCIENCE': 'علوم الكمبيوتر'
   };
-  
+
   // Map grade to Arabic names
   const gradeLabels: Record<string, string> = {
     'PREMIERE_AS': 'الأولى ثانوي علوم',

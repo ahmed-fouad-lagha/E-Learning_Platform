@@ -67,22 +67,22 @@ export default function CourseDetailPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const headers: HeadersInit = {};
         // Only add authorization header if user is authenticated
         if (user?.id) {
           headers['authorization'] = `Bearer ${user.id}`;
         }
-        
+
         const response = await fetch(`/api/courses/${courseId}`, { headers });
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
-        
+
         // Handle successful API response
         if (data.success && data.data) {
           setCourse(data.data);
@@ -128,7 +128,7 @@ export default function CourseDetailPage() {
       // Refresh course data to update enrollment status
       const updatedCourse = await response.json();
       setCourse(updatedCourse);
-      
+
     } catch (err) {
       console.error('Failed to enroll:', err);
       setError('فشل في التسجيل في الدورة');
@@ -137,12 +137,51 @@ export default function CourseDetailPage() {
     }
   };
 
+  const handleCreditEnroll = async () => {
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+
+    setEnrolling(true)
+    try {
+      const response = await fetch(`/api/courses/${courseId}/enroll-with-credits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header
+          'authorization': `Bearer ${user.id}` 
+        }
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        if (error.shortage) {
+          setError(`You need ${error.shortage} more credits. Please recharge your account.`)
+        } else {
+          throw new Error(error.error || 'Failed to enroll')
+        }
+        return
+      }
+
+      // Refresh course data to update enrollment status
+      const updatedCourse = await response.json();
+      setCourse(updatedCourse);
+
+    } catch (err) {
+      console.error('Failed to enroll:', err);
+      setError('فشل في التسجيل في الدورة');
+    } finally {
+      setEnrolling(false);
+    }
+  }
+
   // Handle lesson click
   const handleLessonClick = (lessonId: string) => {
     if (!course || (!courseIsEnrolled && !courseIsFree)) {
       return; // Don't allow access if not enrolled and not free
     }
-    
+
     // Navigate to lesson page
     router.push(`/courses/${courseId}/lessons/${lessonId}`);
   };
@@ -167,11 +206,11 @@ export default function CourseDetailPage() {
       </div>
     );
   }
-  
+
   // We've made it past the null check, so course is definitely defined from here
   const { subject, grade, titleAr, title, thumbnail, totalLessons, estimatedHours, 
           enrollmentCount, lessons, enrollment, description, descriptionAr } = course;
-  
+
   // Derived properties for clarity
   const courseIsFree = course.isFree;
   const courseIsEnrolled = course.isEnrolled;
@@ -189,14 +228,14 @@ export default function CourseDetailPage() {
               {courseIsFree ? 'مجاناً' : 'مدفوع'}
             </Badge>
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-bold mb-4" dir="rtl">
             {course.titleAr}
           </h1>
           <h2 className="text-2xl mb-4 text-muted-foreground">
             {course.title}
           </h2>
-          
+
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mb-6">
             <div className="flex items-center gap-1">
               <Clock size={16} />
@@ -215,7 +254,7 @@ export default function CourseDetailPage() {
               <span>مستوى {grade}</span>
             </div>
           </div>
-          
+
           <div className="aspect-video relative rounded-lg overflow-hidden mb-6">
             {thumbnail ? (
               <Image 
@@ -231,7 +270,7 @@ export default function CourseDetailPage() {
             )}
           </div>
         </div>
-        
+
         {/* Enrollment Card */}
         <div>
           <Card className="sticky top-6">
@@ -245,7 +284,7 @@ export default function CourseDetailPage() {
                       تاريخ التسجيل: {new Date(enrollment?.enrolledAt || '').toLocaleDateString('ar-DZ')}
                     </p>
                   </div>
-                  
+
                   <Button 
                     className="w-full mb-4" 
                     onClick={() => lessons[0] && handleLessonClick(lessons[0].id)}
@@ -253,7 +292,7 @@ export default function CourseDetailPage() {
                     <PlayCircle className="mr-2" size={18} />
                     ابدأ التعلم الآن
                   </Button>
-                  
+
                   <div className="mt-6">
                     <div className="flex justify-between text-sm mb-1">
                       <span>التقدم في الدورة</span>
@@ -271,24 +310,38 @@ export default function CourseDetailPage() {
                         <p className="text-lg font-medium">دورة مجانية بالكامل</p>
                         <p className="text-sm text-muted-foreground mt-1">سجّل الآن للوصول إلى جميع الدروس</p>
                       </div>
-                      
-                      <Button 
-                        className="w-full mb-4" 
-                        onClick={handleEnroll}
-                        disabled={enrolling}
-                      >
-                        {enrolling ? (
-                          <span className="flex items-center">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            جاري التسجيل...
-                          </span>
-                        ) : (
-                          <span className="flex items-center">
-                            <GraduationCap className="mr-2" size={18} />
-                            سجّل في هذه الدورة مجاناً
-                          </span>
-                        )}
-                      </Button>
+
+                      {!enrollment && (
+                        <div className="space-y-3">
+                          {course.isFree ? (
+                            <Button 
+                              onClick={handleEnroll} 
+                              disabled={enrolling} 
+                              className="w-full"
+                            >
+                              {enrolling ? 'Enrolling...' : 'Enroll Now (Free)'}
+                            </Button>
+                          ) : (
+                            <>
+                              <Button 
+                                onClick={handleCreditEnroll} 
+                                disabled={enrolling} 
+                                className="w-full"
+                              >
+                                {enrolling ? 'Enrolling...' : `Enroll with ${course.credit_price || 0} Credits`}
+                              </Button>
+                              <Button 
+                                onClick={handleEnroll} 
+                                disabled={enrolling} 
+                                variant="outline"
+                                className="w-full"
+                              >
+                                {enrolling ? 'Enrolling...' : 'Enroll Now (Free)'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -296,29 +349,43 @@ export default function CourseDetailPage() {
                         <p className="text-3xl font-bold mb-2">دورة مميزة</p>
                         <p className="text-sm text-muted-foreground">هذه الدورة تتطلب اشتراكاً مدفوعاً</p>
                       </div>
-                      
-                      <Button 
-                        className="w-full mb-4" 
-                        onClick={handleEnroll}
-                        disabled={enrolling}
-                      >
-                        {enrolling ? (
-                          <span className="flex items-center">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            جاري التسجيل...
-                          </span>
-                        ) : (
-                          <span className="flex items-center">
-                            <GraduationCap className="mr-2" size={18} />
-                            سجّل في هذه الدورة
-                          </span>
-                        )}
-                      </Button>
+
+                      {!enrollment && (
+                        <div className="space-y-3">
+                          {course.isFree ? (
+                            <Button 
+                              onClick={handleEnroll} 
+                              disabled={enrolling} 
+                              className="w-full"
+                            >
+                              {enrolling ? 'Enrolling...' : 'Enroll Now (Free)'}
+                            </Button>
+                          ) : (
+                            <>
+                              <Button 
+                                onClick={handleCreditEnroll} 
+                                disabled={enrolling} 
+                                className="w-full"
+                              >
+                                {enrolling ? 'Enrolling...' : `Enroll with ${course.credit_price || 0} Credits`}
+                              </Button>
+                              <Button 
+                                onClick={handleEnroll} 
+                                disabled={enrolling} 
+                                variant="outline"
+                                className="w-full"
+                              >
+                                {enrolling ? 'Enrolling...' : 'Enroll Now (Free)'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </>
               )}
-              
+
               <div className="mt-6 space-y-4">
                 <div className="flex items-center">
                   <CheckCircle size={20} className="text-green-500 mr-2" />
@@ -341,7 +408,7 @@ export default function CourseDetailPage() {
           </Card>
         </div>
       </div>
-      
+
       {/* Course Content Tabs */}
       <Tabs defaultValue="overview" className="mt-8">
         <TabsList className="grid w-full md:w-auto grid-cols-3">
@@ -349,7 +416,7 @@ export default function CourseDetailPage() {
           <TabsTrigger value="lessons">الدروس</TabsTrigger>
           <TabsTrigger value="resources">الموارد</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
@@ -357,13 +424,13 @@ export default function CourseDetailPage() {
               <div className="prose prose-lg max-w-none" dir="rtl">
                 <p className="whitespace-pre-line">{descriptionAr}</p>
               </div>
-              
+
               <h4 className="text-xl font-semibold mt-8 mb-4">Course Description (English)</h4>
               <div className="prose prose-lg max-w-none">
                 <p className="whitespace-pre-line">{description}</p>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-xl font-bold mb-4">ما الذي ستتعلمه</h3>
               <ul className="space-y-3">
@@ -374,7 +441,7 @@ export default function CourseDetailPage() {
                   </li>
                 ))}
               </ul>
-              
+
               <h3 className="text-xl font-bold mt-8 mb-4">متطلبات الدورة</h3>
               <ul className="space-y-2 text-sm">
                 <li>- الإلمام بأساسيات المادة</li>
@@ -384,7 +451,7 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="lessons" className="mt-6">
           <h3 className="text-2xl font-bold mb-6">محتوى الدورة</h3>
           <div className="space-y-4">
@@ -409,12 +476,12 @@ export default function CourseDetailPage() {
                         <p className="text-sm text-muted-foreground">{lesson.title}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">
                         {lesson.duration} دقيقة
                       </span>
-                      
+
                       {courseIsEnrolled || courseIsFree ? (
                         <PlayCircle size={20} className="text-primary" />
                       ) : (
@@ -424,7 +491,7 @@ export default function CourseDetailPage() {
                   </CardContent>
                 </Card>
             ))}
-            
+
             {lessons.length === 0 && (
               <div className="text-center p-8 border rounded-lg">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -434,7 +501,7 @@ export default function CourseDetailPage() {
             )}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="resources" className="mt-6">
           <h3 className="text-2xl font-bold mb-6">موارد الدورة</h3>
           <div className="space-y-4">
@@ -450,7 +517,7 @@ export default function CourseDetailPage() {
                 </Button>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4 flex items-center gap-4">
                 <FileText className="h-8 w-8 text-primary" />
@@ -463,7 +530,7 @@ export default function CourseDetailPage() {
                 </Button>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4 flex items-center gap-4">
                 <FileText className="h-8 w-8 text-primary" />
