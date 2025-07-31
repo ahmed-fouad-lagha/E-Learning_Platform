@@ -7,7 +7,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { lessonId: string } }
+  { params }: { params: Promise<{ lessonId: string }> }
 ) {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -20,7 +20,7 @@ export async function GET(
       }, { status: 401 });
     }
 
-    const lessonId = params.lessonId;
+    const { lessonId } = await params;
 
     // Check if user has access to this lesson's course
     const { data: lessonData, error: lessonError } = await supabase
