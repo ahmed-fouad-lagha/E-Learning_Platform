@@ -38,16 +38,29 @@ export default function CoursesManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
-  const { user, profile } = useAuth();
+  const { user, getUserProfile } = useAuth();
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (!user || profile?.role !== 'ADMIN') {
-      router.push('/auth');
-      return;
-    }
-    fetchCourses();
-  }, [user, profile, router]);
+    const checkAdmin = async () => {
+      if (!user) {
+        router.push('/auth');
+        return;
+      }
+      
+      const profile = await getUserProfile();
+      if (!profile || profile.role !== 'ADMIN') {
+        router.push('/auth');
+        return;
+      }
+      
+      setIsAdmin(true);
+      fetchCourses();
+    };
+    
+    checkAdmin();
+  }, [user, getUserProfile, router]);
 
   const fetchCourses = async () => {
     try {
