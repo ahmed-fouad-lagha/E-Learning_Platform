@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import LessonEditor from '@/components/content/lesson-editor';
