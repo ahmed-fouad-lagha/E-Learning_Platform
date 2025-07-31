@@ -1,0 +1,88 @@
+[15:21:59.796] Running build in Washington, D.C., USA (East) – iad1
+[15:21:59.797] Build machine configuration: 2 cores, 8 GB
+[15:21:59.815] Cloning github.com/ahmed-fouad-lagha/E-Learning_Platform (Branch: main, Commit: 8536542)
+[15:22:00.259] Cloning completed: 444.000ms
+[15:22:00.376] Found .vercelignore
+[15:22:00.391] Removed 77 ignored files defined in .vercelignore
+[15:22:00.392]   /.vscode/settings.json
+[15:22:00.392]   /docs/AUTH_TEST_RESULTS.md
+[15:22:00.392]   /docs/auth/AUTH_DEBUGGING_GUIDE.md
+[15:22:00.392]   /docs/auth/DOMAIN_CONSISTENCY_FIX.md
+[15:22:00.392]   /docs/auth/ENHANCED_AUTH_SYSTEM_GUIDE.md
+[15:22:00.392]   /docs/auth/FREE_OAUTH_DOMAIN_FIX.md
+[15:22:00.392]   /docs/auth/GOOGLE_OAUTH_DOUBLE_URL_FIX.md
+[15:22:00.393]   /docs/auth/GOOGLE_OAUTH_REDIRECT_LOOP_FIX.md
+[15:22:00.393]   /docs/auth/GOOGLE_OAUTH_SETUP.md
+[15:22:00.393]   /docs/auth/LOCAL_DEV_OAUTH_FIX.md
+[15:22:02.772] Restored build cache from previous deployment (FLMUmxHdxir3gg8GoLmxQTKx8aBQ)
+[15:22:05.238] Running "vercel build"
+[15:22:05.722] Vercel CLI 44.6.4
+[15:22:06.247] Warning: Detected "engines": { "node": ">=18.0.0" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: http://vercel.link/node-version
+[15:22:06.267] Installing dependencies...
+[15:22:09.102] npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+[15:22:09.182] npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
+[15:22:09.893] npm warn deprecated @supabase/auth-helpers-shared@0.7.0: This package is now deprecated - please use the @supabase/ssr package instead.
+[15:22:10.333] npm warn deprecated @supabase/auth-helpers-nextjs@0.10.0: This package is now deprecated - please use the @supabase/ssr package instead.
+[15:22:10.495] npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+[15:22:10.661] npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
+[15:22:10.666] npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+[15:22:10.680] npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
+[15:22:10.694] npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+[15:22:11.925] 
+[15:22:11.927] added 353 packages, and changed 2 packages in 5s
+[15:22:11.928] 
+[15:22:11.928] 219 packages are looking for funding
+[15:22:11.929]   run `npm fund` for details
+[15:22:11.963] Detected Next.js version: 15.3.5
+[15:22:11.969] Running "npm run vercel-build"
+[15:22:12.084] 
+[15:22:12.085] > nextjs@0.1.0 vercel-build
+[15:22:12.085] > prisma generate && npm run build
+[15:22:12.085] 
+[15:22:13.688] Prisma schema loaded from prisma/schema.prisma
+[15:22:14.236] 
+[15:22:14.237] ✔ Generated Prisma Client (v6.11.1) to ./node_modules/@prisma/client in 369ms
+[15:22:14.237] 
+[15:22:14.237] Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+[15:22:14.238] 
+[15:22:14.238] Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+[15:22:14.238] 
+[15:22:14.360] 
+[15:22:14.361] > nextjs@0.1.0 build
+[15:22:14.362] > next build
+[15:22:14.363] 
+[15:22:15.988]    ▲ Next.js 15.3.5
+[15:22:15.989] 
+[15:22:16.060]    Creating an optimized production build ...
+[15:22:16.563] > [PWA] Compile server
+[15:22:16.565] > [PWA] Compile server
+[15:22:16.566] > [PWA] Compile client (static)
+[15:22:16.566] > [PWA] Auto register service worker with: /vercel/path0/node_modules/next-pwa/register.js
+[15:22:16.567] > [PWA] Service worker: /vercel/path0/public/sw.js
+[15:22:16.567] > [PWA]   url: /sw.js
+[15:22:16.567] > [PWA]   scope: /
+[15:22:35.091] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (128kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+[15:22:35.107] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (100kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+[15:22:35.259] Failed to compile.
+[15:22:35.259] 
+[15:22:35.260] ./lib/file-storage.ts
+[15:22:35.260] Error:   [31mx[0m Unexpected eof
+[15:22:35.260]      ,-[[36;1;4m/vercel/path0/lib/file-storage.ts[0m:201:1]
+[15:22:35.260]  [2m198[0m |   
+[15:22:35.260]  [2m199[0m |   return { valid: true };
+[15:22:35.260]  [2m200[0m | }
+[15:22:35.260]  [2m201[0m | `
+[15:22:35.260]      `----
+[15:22:35.260] 
+[15:22:35.260] Caused by:
+[15:22:35.261]     Syntax Error
+[15:22:35.261] 
+[15:22:35.261] Import trace for requested module:
+[15:22:35.262] ./lib/file-storage.ts
+[15:22:35.262] ./app/api/files/upload/route.ts
+[15:22:35.262] 
+[15:22:35.264] 
+[15:22:35.267] > Build failed because of webpack errors
+[15:22:35.318] Error: Command "npm run vercel-build" exited with 1
+[15:22:36.048] 
+[15:22:38.909] Exiting build container
