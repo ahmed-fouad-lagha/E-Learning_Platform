@@ -37,6 +37,11 @@ export const supabase = createBrowserClient(
 // Export configuration status
 export const isConfigured = isSupabaseConfigured;
 
+export { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+// Re-export createClient for compatibility
+export { createClient } from '@supabase/supabase-js'
+
 // Database types - unified and consistent
 export interface Database {
   public: {

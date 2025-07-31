@@ -1,12 +1,14 @@
-
 import { createClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
   try {
     const supabase = createClient()
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < quantity; i++) {
       // Generate unique card code using database function
       const { data: codeData } = await supabase.rpc('generate_card_code')
-      
+
       const card = {
         card_code: codeData,
         credit_amount,
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
         batch_name,
         notes
       }
-      
+
       cards.push(card)
     }
 

@@ -1,16 +1,18 @@
-
 import { createClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { applyRateLimit, rateLimitConfigs, validateRequest, validationSchemas, getClientIP, logSecurityEvent, getSecurityHeaders, sanitizeError } from '@/lib/security'
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
   const clientIP = getClientIP(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
 
   try {
     const supabase = createClient()
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         details: { endpoint: 'card-redeem' }
       })
-      
+
       return NextResponse.json(
         { error: 'Too many redemption attempts. Please try again later.' },
         { 
@@ -44,13 +46,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     // Input validation
     const validation = validateRequest(
       validationSchemas.cardCode,
       body.card_code
     )
-    
+
     if (!validation.success) {
       logSecurityEvent({
         type: 'INVALID_INPUT',
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         details: { endpoint: 'card-redeem', errors: validation.errors }
       })
-      
+
       return NextResponse.json(
         { error: 'Invalid card code format' },
         { status: 400, headers: getSecurityHeaders() }

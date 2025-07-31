@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,7 +22,7 @@ interface LessonFilesProps {
   canManage?: boolean;
 }
 
-export default function LessonFiles({ lessonId, canManage = false }: LessonFilesProps) {
+function LessonFiles({ lessonId, canManage = false }: LessonFilesProps) {
   const [files, setFiles] = useState<LessonFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,3 +120,6 @@ export default function LessonFiles({ lessonId, canManage = false }: LessonFiles
     </Card>
   );
 }
+
+export default LessonFiles
+export { LessonFiles }

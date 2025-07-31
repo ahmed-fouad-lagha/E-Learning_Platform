@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,15 +11,14 @@ export async function POST(
   { params }: { params: Params }
 ) {
   try {
+    const { courseId } = await params
     const supabase = createClient()
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { courseId } = params
 
     // Get course details
     const { data: course, error: courseError } = await supabase
@@ -116,7 +114,7 @@ export async function POST(
           updated_at: wallet.updated_at
         })
         .eq('user_id', user.id)
-      
+
       return NextResponse.json({ error: 'Failed to record transaction' }, { status: 500 })
     }
 
@@ -143,12 +141,12 @@ export async function POST(
           updated_at: wallet.updated_at
         })
         .eq('user_id', user.id)
-      
+
       await supabase
         .from('credit_transactions')
         .delete()
         .eq('id', transaction.id)
-      
+
       return NextResponse.json({ error: 'Failed to create enrollment' }, { status: 500 })
     }
 

@@ -6,7 +6,7 @@ const isReplitEnvironment = process.env.REPL_ID !== undefined
 
 // Dynamically import Replit object storage only if available
 let ReplitObjectStorage: any = null
-if (isReplitEnvironment) {
+if (isReplitEnvironment && typeof require !== 'undefined') {
   try {
     ReplitObjectStorage = require('@replit/object-storage')
   } catch (error) {
