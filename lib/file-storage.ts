@@ -6,11 +6,13 @@ const isReplitEnvironment = process.env.REPL_ID !== undefined
 
 // Dynamically import Replit object storage only if available
 let ReplitObjectStorage: any = null
-if (isReplitEnvironment && typeof require !== 'undefined') {
-  try {
-    ReplitObjectStorage = require('@replit/object-storage')
-  } catch (error) {
-    console.log('Replit object storage not available, using Supabase storage')
+async function initReplitStorage() {
+  if (isReplitEnvironment && ReplitObjectStorage === null) {
+    try {
+      ReplitObjectStorage = await import('@replit/object-storage')
+    } catch (error) {
+      console.log('Replit object storage not available, using Supabase storage')
+    }
   }
 }
 
@@ -43,6 +45,11 @@ export async function uploadFile(
 }
 
 async function uploadToReplit(file: File, folder: string): Promise<UploadResult> {
+  await initReplitStorage()
+  if (!ReplitObjectStorage) {
+    throw new Error('Replit object storage not available')
+  }
+
   const fileName = `${folder}/${Date.now()}-${file.name}`
   const buffer = await file.arrayBuffer()
 
@@ -85,6 +92,7 @@ async function uploadToSupabase(file: File, folder: string): Promise<UploadResul
 export async function getFile(filePath: string): Promise<ArrayBuffer | null> {
   try {
     // Use Replit object storage if available
+    await initReplitStorage()
     if (ReplitObjectStorage) {
 
       // Initialize Replit Object Storage client
@@ -114,6 +122,7 @@ export async function getFile(filePath: string): Promise<ArrayBuffer | null> {
 export async function deleteFile(filePath: string): Promise<boolean> {
   try {
     // Use Replit object storage if available
+    await initReplitStorage()
     if (ReplitObjectStorage) {
       // Initialize Replit Object Storage client
       const storage = new ReplitObjectStorage.Client();
