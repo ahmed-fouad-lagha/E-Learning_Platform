@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
 
     // Attempt login
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: validatedData.email,
-      password: validatedData.password
+      email,
+      password
     })
 
     if (authError) {
@@ -117,14 +117,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (mfaData?.enabled) {
-      if (!validatedData.mfaToken) {
+      if (!body.mfaToken) {
         return NextResponse.json({
           requiresMFA: true,
           message: 'Multi-factor authentication required'
         }, { status: 200 })
       }
 
-      const isValidMFA = await verifyMFAToken(authData.user.id, validatedData.mfaToken)
+      const isValidMFA = await verifyMFAToken(authData.user.id, body.mfaToken)
       if (!isValidMFA) {
         throw new AuthError('Invalid MFA code', 'INVALID_MFA')
       }
