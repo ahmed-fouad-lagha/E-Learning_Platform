@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import FileUpload from './file-upload';
 import { Save, Eye, Upload, BookOpen, Target, Brain } from 'lucide-react';
+import RichTextEditor from './rich-text-editor';
 
 interface LessonEditorProps {
   courseId: string;
@@ -253,25 +253,20 @@ export default function LessonEditor({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
+              <div>
                   <Label htmlFor="content">المحتوى (إنجليزي)</Label>
-                  <Textarea
-                    id="content"
-                    value={lessonData.content}
-                    onChange={(e) => handleInputChange('content', e.target.value)}
+                  <RichTextEditor
+                    content={lessonData.content}
+                    onChange={(content) => handleInputChange('content', content)}
                     placeholder="Lesson content in English..."
-                    rows={8}
                   />
                 </div>
                 <div>
                   <Label htmlFor="contentAr">المحتوى (عربي)</Label>
-                  <Textarea
-                    id="contentAr"
-                    value={lessonData.contentAr}
-                    onChange={(e) => handleInputChange('contentAr', e.target.value)}
+                  <RichTextEditor
+                    content={lessonData.contentAr}
+                    onChange={(contentAr) => handleInputChange('contentAr', contentAr)}
                     placeholder="محتوى الدرس بالعربية..."
-                    rows={8}
-                    dir="rtl"
                   />
                 </div>
               </CardContent>

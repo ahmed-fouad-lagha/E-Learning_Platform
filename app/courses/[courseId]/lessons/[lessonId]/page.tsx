@@ -15,6 +15,8 @@ import {
   List,
   CheckCircle
 } from 'lucide-react';
+import RichTextEditor from '@/components/content/rich-text-editor';
+import LessonFiles from '@/components/content/lesson-files';
 
 interface LessonDetail {
   id: string;
@@ -39,22 +41,22 @@ export default function LessonPage() {
   const { courseId, lessonId } = useParams() as { courseId: string; lessonId: string };
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [progress, setProgress] = useState(0);
-  
+
   // Fetch lesson details
   useEffect(() => {
     const fetchLesson = async () => {
       try {
         setIsLoading(true);
-        
+
         // Mock API call (replace with actual API)
         // const response = await fetch(`/api/courses/${courseId}/lessons/${lessonId}`);
-        
+
         // Mock data for demonstration
         const mockLesson: LessonDetail = {
           id: lessonId,
@@ -82,9 +84,9 @@ export default function LessonPage() {
           nextLessonId: "lesson2",
           prevLessonId: null
         };
-        
+
         setLesson(mockLesson);
-        
+
         // Simulate progress
         setProgress(33);
       } catch (err) {
@@ -111,13 +113,13 @@ export default function LessonPage() {
       //     'Authorization': `Bearer ${user?.id}`
       //   }
       // });
-      
+
       // Update progress (mock)
       setProgress(100);
-      
+
       // Show success message
       alert('تم تسجيل الدرس كمكتمل');
-      
+
     } catch (err) {
       console.error('Failed to mark lesson as completed:', err);
     }
@@ -165,15 +167,15 @@ export default function LessonPage() {
               <ChevronLeft className="mr-1" size={16} />
               العودة للدورة
             </Button>
-            
+
             <div className="hidden md:block mx-4 h-6 w-px bg-border"></div>
-            
+
             <div className="hidden md:block">
               <h2 className="font-medium">{lesson.titleAr}</h2>
               <p className="text-xs text-muted-foreground">{lesson.title}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2">
               <Button
@@ -185,7 +187,7 @@ export default function LessonPage() {
                 <ChevronRight className="ml-1" size={16} />
                 الدرس السابق
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -196,7 +198,7 @@ export default function LessonPage() {
                 <ChevronLeft className="mr-1" size={16} />
               </Button>
             </div>
-            
+
             <Button 
               variant="ghost"
               size="icon"
@@ -208,13 +210,13 @@ export default function LessonPage() {
           </div>
         </div>
       </header>
-      
+
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-b p-4">
           <h2 className="font-medium mb-2">{lesson.titleAr}</h2>
           <p className="text-xs text-muted-foreground mb-4">{lesson.title}</p>
-          
+
           <div className="flex items-center justify-between gap-2 mb-4">
             <Button
               variant="outline"
@@ -226,7 +228,7 @@ export default function LessonPage() {
               <ChevronRight className="ml-1" size={16} />
               الدرس السابق
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -240,7 +242,7 @@ export default function LessonPage() {
           </div>
         </div>
       )}
-      
+
       {/* Progress bar */}
       <div className="bg-background">
         <div className="container mx-auto px-4 py-2">
@@ -252,7 +254,7 @@ export default function LessonPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Main content */}
       <div className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2 text-right" dir="rtl">
@@ -261,14 +263,14 @@ export default function LessonPage() {
         <h2 className="text-xl text-muted-foreground mb-6">
           {lesson.title}
         </h2>
-        
+
         <Tabs defaultValue="video" className="mt-6">
           <TabsList className="grid w-full md:w-auto grid-cols-3">
             <TabsTrigger value="video">الفيديو</TabsTrigger>
             <TabsTrigger value="content">المحتوى</TabsTrigger>
             <TabsTrigger value="resources">الموارد</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="video" className="mt-6">
             {lesson.videoUrl ? (
               <div className="aspect-video w-full mb-6">
@@ -287,7 +289,7 @@ export default function LessonPage() {
                 </div>
               </div>
             )}
-            
+
             <Button
               onClick={markAsCompleted}
               className="mx-auto block"
@@ -297,13 +299,26 @@ export default function LessonPage() {
               {progress === 100 ? 'تم إكمال هذا الدرس' : 'تسجيل كمكتمل'}
             </Button>
           </TabsContent>
-          
+
           <TabsContent value="content" className="mt-6">
-            <div className="prose prose-lg max-w-none" dir="rtl">
-              <p className="whitespace-pre-line text-right">{lesson.contentAr}</p>
-            </div>
+            {/* Lesson Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle>محتوى الدرس</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RichTextEditor
+                content={lesson?.contentAr || lesson?.content || 'لا يوجد محتوى متاح'}
+                onChange={() => {}} // Read-only
+                editable={false}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Lesson Files */}
+          <LessonFiles lessonId={lessonId} />
           </TabsContent>
-          
+
           <TabsContent value="resources" className="mt-6">
             <h3 className="text-xl font-bold mb-4">مرفقات الدرس</h3>
             <div className="space-y-3">
@@ -324,7 +339,7 @@ export default function LessonPage() {
                   </Button>
                 </div>
               ))}
-              
+
               {lesson.attachments.length === 0 && (
                 <p className="text-muted-foreground text-center py-8">
                   لا توجد مرفقات لهذا الدرس
@@ -334,7 +349,7 @@ export default function LessonPage() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       {/* Footer navigation */}
       <footer className="bg-card border-t py-4 px-4">
         <div className="container mx-auto flex justify-between">
@@ -346,7 +361,7 @@ export default function LessonPage() {
             <ChevronRight className="ml-1" size={16} />
             الدرس السابق
           </Button>
-          
+
           <Button
             onClick={() => navigateToLesson(lesson.nextLessonId)}
             disabled={!lesson.nextLessonId}
